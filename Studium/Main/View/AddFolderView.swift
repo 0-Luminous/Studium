@@ -72,8 +72,9 @@ struct AddFolderView: View {
                 
                 // Превью папки
                 VStack(spacing: 16) {
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(
+                    Image(systemName: "folder.fill")
+                        .font(.system(size: 120, weight: .medium))
+                        .foregroundStyle(
                             LinearGradient(
                                 gradient: Gradient(colors: [Color.orange, Color.red]),
                                 startPoint: .topLeading,
@@ -81,20 +82,14 @@ struct AddFolderView: View {
                             )
                         )
                         .frame(height: 140)
-                        .overlay(
-                            VStack(spacing: 12) {
-                                Image(systemName: "folder.fill")
-                                    .font(.system(size: 36))
-                                    .foregroundColor(.white)
-                                
-                                Text(folderName.isEmpty ? "Название папки" : folderName)
-                                    .font(.system(size: 18, weight: .semibold))
-                                    .foregroundColor(.white)
-                                    .multilineTextAlignment(.center)
-                                    .lineLimit(2)
-                            }
-                        )
                         .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
+                    
+                    // Название под папкой
+                    Text(folderName.isEmpty ? "Название папки" : folderName)
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 24)

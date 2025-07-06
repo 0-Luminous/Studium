@@ -11,26 +11,45 @@ struct MainItemView: View {
         VStack(spacing: 12) {
             // Квадратная иконка
             ZStack {
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(item.gradient)
-                    .frame(height: 120)
-                    .shadow(
-                        color: .black.opacity(0.25),
-                        radius: isPressed ? 4 : 8,
-                        x: 0,
-                        y: isPressed ? 2 : 6
-                    )
-                    .scaleEffect(isPressed ? 0.95 : 1.0)
+                if item.type == .folder {
+                    // Для папок используем большую иконку folder.fill
+                    Image(systemName: "folder.fill")
+                        .font(.system(size: 120, weight: .medium))
+                        .foregroundStyle(item.gradient)
+                        .frame(height: 120)
+                        .shadow(
+                            color: .black.opacity(0.25),
+                            radius: isPressed ? 4 : 8,
+                            x: 0,
+                            y: isPressed ? 2 : 6
+                        )
+                        .scaleEffect(isPressed ? 0.95 : 1.0)
+                } else {
+                    // Для модулей оставляем RoundedRectangle
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(item.gradient)
+                        .frame(height: 120)
+                        .shadow(
+                            color: .black.opacity(0.25),
+                            radius: isPressed ? 4 : 8,
+                            x: 0,
+                            y: isPressed ? 2 : 6
+                        )
+                        .scaleEffect(isPressed ? 0.95 : 1.0)
+                }
 
                 VStack(spacing: 8) {
-                    Image(systemName: item.type.iconName)
-                        .font(.system(size: 36, weight: .medium))
-                        .foregroundColor(.white)
+                    if item.type != .folder {
+                        // Показываем иконку только для не-папок
+                        Image(systemName: item.type.iconName)
+                            .font(.system(size: 36, weight: .medium))
+                            .foregroundColor(.white)
+                    }
 
                     // Небольшая дата создания
-                    Text(item.createdAt, style: .date)
-                        .font(.caption2)
-                        .foregroundColor(.white.opacity(0.8))
+                    // Text(item.createdAt, style: .date)
+                    //     .font(.caption2)
+                    //     .foregroundColor(item.type == .folder ? .primary : .white.opacity(0.8))
                 }
             }
 
