@@ -5,9 +5,8 @@ class MainViewModel: ObservableObject {
     // MARK: - Published Properties
     @Published var showingAddOptions = false
     @Published var items: [MainItem] = []
-    @Published var showingNameInput = false
-    @Published var newItemName = ""
-    @Published var newItemType: MainItem.ItemType = .module
+    @Published var showingAddModule = false
+    @Published var showingAddFolder = false
     @Published var currentFolderId: UUID? = nil // Текущая папка (nil = корневая)
     @Published var navigationPath: [MainItem] = [] // Путь навигации
     
@@ -59,35 +58,44 @@ class MainViewModel: ObservableObject {
     
     // MARK: - Item Management
     
-    /// Добавление нового элемента
-    func addItem() {
-        guard !newItemName.isEmpty else { return }
-        
-        let gradient = newItemType == .module ?
-            LinearGradient(
-                gradient: Gradient(colors: [Color.blue, Color.purple]),
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            ) :
-            LinearGradient(
-                gradient: Gradient(colors: [Color.orange, Color.red]),
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+    /// Добавление нового модуля
+    func addModule(name: String, gradient: LinearGradient, description: String) {
+        guard !name.isEmpty else { return }
         
         let newItem = MainItem(
-            name: newItemName,
-            type: newItemType,
+            name: name,
+            type: .module,
             gradient: gradient,
             createdAt: Date(),
-            parentId: currentFolderId // Добавляем в текущую папку
+            parentId: currentFolderId
         )
         
         withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
             items.append(newItem)
         }
+    }
+    
+    /// Добавление новой папки
+    func addFolder(name: String) {
+        guard !name.isEmpty else { return }
         
-        newItemName = ""
+        let gradient = LinearGradient(
+            gradient: Gradient(colors: [Color.orange, Color.red]),
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+        
+        let newItem = MainItem(
+            name: name,
+            type: .folder,
+            gradient: gradient,
+            createdAt: Date(),
+            parentId: currentFolderId
+        )
+        
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+            items.append(newItem)
+        }
     }
     
     /// Удаление элемента
@@ -126,22 +134,15 @@ class MainViewModel: ObservableObject {
         }
     }
     
-    /// Подготовка к добавлению модуля
-    func prepareAddModule() {
+    /// Показ экрана создания модуля
+    func showAddModule() {
         hideAddOptions()
-        newItemType = .module
-        showingNameInput = true
+        showingAddModule = true
     }
     
-    /// Подготовка к добавлению папки
-    func prepareAddFolder() {
+    /// Показ экрана создания папки
+    func showAddFolder() {
         hideAddOptions()
-        newItemType = .folder
-        showingNameInput = true
-    }
-    
-    /// Отмена добавления элемента
-    func cancelAddItem() {
-        newItemName = ""
+        showingAddFolder = true
     }
 }

@@ -138,7 +138,7 @@ struct MainView: View {
                         VStack(spacing: 12) {
                             // Кнопка модуля
                             Button(action: {
-                                viewModel.prepareAddModule()
+                                viewModel.showAddModule()
                             }) {
                                 HStack {
                                     Image(systemName: "tray.fill")
@@ -165,7 +165,7 @@ struct MainView: View {
 
                             // Кнопка папки
                             Button(action: {
-                                viewModel.prepareAddFolder()
+                                viewModel.showAddFolder()
                             }) {
                                 HStack {
                                     Image(systemName: "plus.rectangle.on.folder.fill")
@@ -196,8 +196,8 @@ struct MainView: View {
                     }
                 }
                 .transition(.asymmetric(
-                    insertion: .scale(scale: 0.8).combined(with: .opacity).combined(with: .offset(x: 20, y: 20)),
-                    removal: .scale(scale: 0.8).combined(with: .opacity).combined(with: .offset(x: 20, y: 20))
+                    insertion: .move(edge: .trailing).combined(with: .opacity).combined(with: .scale(scale: 0.8)),
+                    removal: .move(edge: .trailing).combined(with: .opacity).combined(with: .scale(scale: 0.8))
                 ))
             }
         }
@@ -206,16 +206,15 @@ struct MainView: View {
                 viewModel.hideAddOptions()
             }
         }
-        .alert("Добавить \(viewModel.newItemType.displayName)", isPresented: $viewModel.showingNameInput) {
-            TextField("Название", text: $viewModel.newItemName)
-            Button("Отмена", role: .cancel) {
-                viewModel.cancelAddItem()
+        .sheet(isPresented: $viewModel.showingAddModule) {
+            AddModuleView { name, gradient, description in
+                viewModel.addModule(name: name, gradient: gradient, description: description)
             }
-            Button("Добавить") {
-                viewModel.addItem()
+        }
+        .sheet(isPresented: $viewModel.showingAddFolder) {
+            AddFolderView { name in
+                viewModel.addFolder(name: name)
             }
-        } message: {
-            Text("Введите название для нового \(viewModel.newItemType.displayName)")
         }
     }
 }
