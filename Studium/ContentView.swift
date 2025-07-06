@@ -5,8 +5,8 @@
 //  Created by Yan on 4/7/25.
 //
 
-import SwiftUI
 import CoreData
+import SwiftUI
 
 // Модель для элементов
 struct StudiumItem: Identifiable {
@@ -16,18 +16,18 @@ struct StudiumItem: Identifiable {
     let gradient: LinearGradient
     let createdAt: Date
     let parentId: UUID? // Добавляем поддержку родительской папки
-    
+
     enum ItemType {
         case module
         case folder
-        
+
         var iconName: String {
             switch self {
             case .module: return "tray.fill"
             case .folder: return "folder.fill"
             }
         }
-        
+
         var displayName: String {
             switch self {
             case .module: return "модуль"
@@ -45,22 +45,22 @@ struct ContentView: View {
     @State private var newItemType: StudiumItem.ItemType = .module
     @State private var currentFolderId: UUID? = nil // Текущая папка (nil = корневая)
     @State private var navigationPath: [StudiumItem] = [] // Путь навигации
-    
+
     // Вычисляемые свойства для адаптивной сетки
     private var gridColumns: [GridItem] {
         let spacing: CGFloat = 16
         let minItemWidth: CGFloat = 150
-        
+
         return [
-            GridItem(.adaptive(minimum: minItemWidth, maximum: 200), spacing: spacing)
+            GridItem(.adaptive(minimum: minItemWidth, maximum: 200), spacing: spacing),
         ]
     }
-    
+
     // Фильтрованные элементы для текущей папки
     private var currentItems: [StudiumItem] {
         items.filter { $0.parentId == currentFolderId }
     }
-    
+
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
@@ -77,27 +77,29 @@ struct ContentView: View {
                                 .background(Color.white.opacity(0.1))
                                 .clipShape(Circle())
                         }
-                        .padding(.trailing, 8)
+                        .padding(.leading, 20)
                     }
-                    
+
                     VStack(alignment: .leading, spacing: 2) {
                         Text(navigationPath.last?.name ?? "Studium")
                             .font(.largeTitle)
                             .fontWeight(.bold)
                             .foregroundColor(.white)
-                        
+
                         if !navigationPath.isEmpty {
                             Text(breadcrumbText)
                                 .font(.caption)
                                 .foregroundColor(.gray)
                         }
                     }
-                    
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 5)
+
                     Spacer()
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 10)
+                .background(.thinMaterial)
                 
+
                 // Сетка элементов
                 if currentItems.isEmpty {
                     // Пустое состояние
@@ -107,13 +109,13 @@ struct ContentView: View {
                             .font(.system(size: 60))
                             .foregroundColor(.gray)
                             .opacity(0.6)
-                        
+
                         VStack(spacing: 8) {
                             Text(currentFolderId == nil ? "Добро пожаловать!" : "Пустая папка")
                                 .font(.title2)
                                 .fontWeight(.semibold)
                                 .foregroundColor(.white)
-                            
+
                             Text(currentFolderId == nil ? "Создайте свой первый модуль или папку" : "Добавьте модули или папки")
                                 .font(.body)
                                 .foregroundColor(.gray)
@@ -142,10 +144,12 @@ struct ContentView: View {
                         .padding(.bottom, 100) // Отступ для кнопки
                     }
                 }
-                
+            }
+            .background(Color(red: 0.098, green: 0.098, blue: 0.098))
+
+            // Кнопка добавления (теперь в отдельном слое ZStack)
+            VStack {
                 Spacer()
-                
-                // Кнопка добавления
                 HStack {
                     Spacer()
                     Button(action: {
@@ -166,8 +170,7 @@ struct ContentView: View {
                     .padding(.bottom, 20)
                 }
             }
-            .background(Color(red: 0.098, green: 0.098, blue: 0.098))
-            
+
             // Меню добавления
             if showingAddOptions {
                 VStack {
@@ -205,7 +208,7 @@ struct ContentView: View {
                                         .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
                                 )
                             }
-                            
+
                             // Кнопка папки
                             Button(action: {
                                 withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
@@ -267,7 +270,7 @@ struct ContentView: View {
             Text("Введите название для нового \(newItemType.displayName)")
         }
     }
-    
+
     // Функции навигации
     private func handleItemTap(_ item: StudiumItem) {
         if item.type == .folder {
@@ -276,23 +279,23 @@ struct ContentView: View {
             print("Tapped on module: \(item.name)")
         }
     }
-    
+
     private func navigateToFolder(_ folder: StudiumItem) {
         withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
             navigationPath.append(folder)
             currentFolderId = folder.id
         }
     }
-    
+
     private func navigateBack() {
         guard !navigationPath.isEmpty else { return }
-        
+
         withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
             navigationPath.removeLast()
             currentFolderId = navigationPath.last?.id
         }
     }
-    
+
     private var breadcrumbText: String {
         if navigationPath.count <= 1 {
             return "Studium"
@@ -301,7 +304,7 @@ struct ContentView: View {
             return path.joined(separator: " → ")
         }
     }
-    
+
     private func deleteItem(_ item: StudiumItem) {
         // Если удаляем папку, удаляем все её содержимое
         if item.type == .folder {
@@ -309,7 +312,7 @@ struct ContentView: View {
         }
         items.removeAll { $0.id == item.id }
     }
-    
+
     private func deleteItemsInFolder(_ folderId: UUID) {
         let itemsToDelete = items.filter { $0.parentId == folderId }
         for item in itemsToDelete {
@@ -319,22 +322,22 @@ struct ContentView: View {
             items.removeAll { $0.id == item.id }
         }
     }
-    
+
     private func addItem() {
         guard !newItemName.isEmpty else { return }
-        
-        let gradient = newItemType == .module ? 
+
+        let gradient = newItemType == .module ?
             LinearGradient(
                 gradient: Gradient(colors: [Color.blue, Color.purple]),
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
-            ) : 
+            ) :
             LinearGradient(
                 gradient: Gradient(colors: [Color.orange, Color.red]),
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
-        
+
         let newItem = StudiumItem(
             name: newItemName,
             type: newItemType,
@@ -342,11 +345,11 @@ struct ContentView: View {
             createdAt: Date(),
             parentId: currentFolderId // Добавляем в текущую папку
         )
-        
+
         withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
             items.append(newItem)
         }
-        
+
         newItemName = ""
     }
 }
@@ -356,9 +359,9 @@ struct StudiumItemView: View {
     let item: StudiumItem
     let onTap: () -> Void
     let onDelete: () -> Void
-    
+
     @State private var isPressed = false
-    
+
     var body: some View {
         VStack(spacing: 12) {
             // Квадратная иконка
@@ -373,19 +376,19 @@ struct StudiumItemView: View {
                         y: isPressed ? 2 : 6
                     )
                     .scaleEffect(isPressed ? 0.95 : 1.0)
-                
+
                 VStack(spacing: 8) {
                     Image(systemName: item.type.iconName)
                         .font(.system(size: 36, weight: .medium))
                         .foregroundColor(.white)
-                    
+
                     // Небольшая дата создания
                     Text(item.createdAt, style: .date)
                         .font(.caption2)
                         .foregroundColor(.white.opacity(0.8))
                 }
             }
-            
+
             // Название
             Text(item.name)
                 .font(.system(size: 16, weight: .semibold))
@@ -402,7 +405,7 @@ struct StudiumItemView: View {
             // Haptic feedback
             let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
             impactFeedback.impactOccurred()
-            
+
             // Показать меню удаления
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                 onDelete()
@@ -426,7 +429,7 @@ struct StudiumItemView: View {
 // Расширение для обработки нажатий
 extension View {
     func onPressGesture(onPress: @escaping () -> Void, onRelease: @escaping () -> Void) -> some View {
-        self.simultaneousGesture(
+        simultaneousGesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { _ in
                     onPress()
