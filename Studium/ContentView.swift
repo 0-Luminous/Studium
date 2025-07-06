@@ -9,77 +9,115 @@ import SwiftUI
 import CoreData
 
 struct ContentView: View {
-    @Environment(\.managedObjectContext) private var viewContext
-
-    @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \Item.timestamp, ascending: true)],
-        animation: .default)
-    private var items: FetchedResults<Item>
-
+    @State private var showingAddOptions = false
+    
     var body: some View {
-        NavigationView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp!, formatter: itemFormatter)")
-                    } label: {
-                        Text(item.timestamp!, formatter: itemFormatter)
+        ZStack {
+            VStack {
+                Spacer()
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                            showingAddOptions.toggle()
+                        }
+                    }) {
+                        Image(systemName: showingAddOptions ? "xmark" : "plus")
+                            .font(.title2)
+                            .foregroundColor(.white)
+                            .frame(width: 56, height: 56)
+                            .background(showingAddOptions ? Color.red : Color.accentColor)
+                            .clipShape(Circle())
+                            .shadow(radius: 4)
+                            .contentTransition(.symbolEffect(.replace))
+                    }
+                    .padding(.trailing, 20)
+                    .padding(.bottom, 20)
+                }
+            }
+            .background(Color(red: 0.098, green: 0.098, blue: 0.098))
+            
+            // Custom menu overlay
+            if showingAddOptions {
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        VStack(spacing: 12) {
+                            // Module button
+                            Button(action: {
+                                withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                                    showingAddOptions = false
+                                }
+                                // TODO: Add module logic
+                                print("Adding module")
+                            }) {
+                                HStack {
+                                    Image(systemName: "tray.fill")
+                                        .font(.title3)
+                                        .foregroundColor(.white)
+                                        .frame(width: 24)
+                                    Text("Модуль")
+                                        .font(.system(size: 16, weight: .medium))
+                                        .foregroundColor(.white)
+                                    Spacer()
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 12)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(Color.blue)
+                                        .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
+                                )
+                            }
+                            
+                            // Folder button
+                            Button(action: {
+                                withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                                    showingAddOptions = false
+                                }
+                                // TODO: Add folder logic
+                                print("Adding folder")
+                            }) {
+                                HStack {
+                                    Image(systemName: "plus.rectangle.on.folder.fill")
+                                        .font(.title3)
+                                        .foregroundColor(.white)
+                                        .frame(width: 24)
+                                    Text("Папка")
+                                        .font(.system(size: 16, weight: .medium))
+                                        .foregroundColor(.white)
+                                    Spacer()
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 12)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(Color.orange)
+                                        .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
+                                )
+                            }
+                        }
+                        .frame(width: 140)
+                        .padding(.trailing, 20)
+                        .padding(.bottom, 90)
                     }
                 }
-                .onDelete(perform: deleteItems)
-            }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
-                }
-            }
-            Text("Select an item")
-        }
-    }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(context: viewContext)
-            newItem.timestamp = Date()
-
-            do {
-                try viewContext.save()
-            } catch {
-                // Replace this implementation with code to handle the error appropriately.
-                // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-                let nsError = error as NSError
-                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
+                .transition(.asymmetric(
+                    insertion: .scale(scale: 0.8).combined(with: .opacity).combined(with: .offset(x: 20, y: 20)),
+                    removal: .scale(scale: 0.8).combined(with: .opacity).combined(with: .offset(x: 20, y: 20))
+                ))
             }
         }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            offsets.map { items[$0] }.forEach(viewContext.delete)
-
-            do {
-                try viewContext.save()
-            } catch {
-                // Replace this implementation with code to handle the error appropriately.
-                // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-                let nsError = error as NSError
-                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
+        .onTapGesture {
+            if showingAddOptions {
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                    showingAddOptions = false
+                }
             }
         }
     }
 }
-
-private let itemFormatter: DateFormatter = {
-    let formatter = DateFormatter()
-    formatter.dateStyle = .short
-    formatter.timeStyle = .medium
-    return formatter
-}()
 
 #Preview {
     ContentView().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
