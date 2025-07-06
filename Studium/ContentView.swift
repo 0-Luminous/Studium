@@ -15,6 +15,7 @@ struct StudiumItem: Identifiable {
     let type: ItemType
     let gradient: LinearGradient
     let createdAt: Date
+    let parentId: UUID? // Добавляем поддержку родительской папки
     
     enum ItemType {
         case module
@@ -42,6 +43,8 @@ struct ContentView: View {
     @State private var showingNameInput = false
     @State private var newItemName = ""
     @State private var newItemType: StudiumItem.ItemType = .module
+    @State private var currentFolderId: UUID? = nil // Текущая папка (nil = корневая)
+    @State private var navigationPath: [StudiumItem] = [] // Путь навигации
     
     // Вычисляемые свойства для адаптивной сетки
     private var gridColumns: [GridItem] {
@@ -53,37 +56,65 @@ struct ContentView: View {
         ]
     }
     
+    // Фильтрованные элементы для текущей папки
+    private var currentItems: [StudiumItem] {
+        items.filter { $0.parentId == currentFolderId }
+    }
+    
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
-                // Заголовок
+                // Заголовок с навигацией
                 HStack {
-                    Text("Studium")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
+                    if !navigationPath.isEmpty {
+                        Button(action: {
+                            navigateBack()
+                        }) {
+                            Image(systemName: "chevron.left")
+                                .font(.title2)
+                                .foregroundColor(.white)
+                                .frame(width: 32, height: 32)
+                                .background(Color.white.opacity(0.1))
+                                .clipShape(Circle())
+                        }
+                        .padding(.trailing, 8)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(navigationPath.last?.name ?? "Studium")
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                        
+                        if !navigationPath.isEmpty {
+                            Text(breadcrumbText)
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                        }
+                    }
+                    
                     Spacer()
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 10)
                 
                 // Сетка элементов
-                if items.isEmpty {
+                if currentItems.isEmpty {
                     // Пустое состояние
                     VStack(spacing: 20) {
                         Spacer()
-                        Image(systemName: "square.stack.3d.up")
+                        Image(systemName: currentFolderId == nil ? "square.stack.3d.up" : "folder")
                             .font(.system(size: 60))
                             .foregroundColor(.gray)
                             .opacity(0.6)
                         
                         VStack(spacing: 8) {
-                            Text("Добро пожаловать!")
+                            Text(currentFolderId == nil ? "Добро пожаловать!" : "Пустая папка")
                                 .font(.title2)
                                 .fontWeight(.semibold)
                                 .foregroundColor(.white)
                             
-                            Text("Создайте свой первый модуль или папку")
+                            Text(currentFolderId == nil ? "Создайте свой первый модуль или папку" : "Добавьте модули или папки")
                                 .font(.body)
                                 .foregroundColor(.gray)
                                 .multilineTextAlignment(.center)
@@ -94,14 +125,14 @@ struct ContentView: View {
                 } else {
                     ScrollView {
                         LazyVGrid(columns: gridColumns, spacing: 20) {
-                            ForEach(items) { item in
+                            ForEach(currentItems) { item in
                                 StudiumItemView(item: item) {
                                     // Действие при нажатии
-                                    print("Tapped on \(item.name)")
+                                    handleItemTap(item)
                                 } onDelete: {
                                     // Действие при удалении
                                     withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
-                                        items.removeAll { $0.id == item.id }
+                                        deleteItem(item)
                                     }
                                 }
                             }
@@ -237,6 +268,58 @@ struct ContentView: View {
         }
     }
     
+    // Функции навигации
+    private func handleItemTap(_ item: StudiumItem) {
+        if item.type == .folder {
+            navigateToFolder(item)
+        } else {
+            print("Tapped on module: \(item.name)")
+        }
+    }
+    
+    private func navigateToFolder(_ folder: StudiumItem) {
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+            navigationPath.append(folder)
+            currentFolderId = folder.id
+        }
+    }
+    
+    private func navigateBack() {
+        guard !navigationPath.isEmpty else { return }
+        
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+            navigationPath.removeLast()
+            currentFolderId = navigationPath.last?.id
+        }
+    }
+    
+    private var breadcrumbText: String {
+        if navigationPath.count <= 1 {
+            return "Studium"
+        } else {
+            let path = ["Studium"] + navigationPath.dropLast().map { $0.name }
+            return path.joined(separator: " → ")
+        }
+    }
+    
+    private func deleteItem(_ item: StudiumItem) {
+        // Если удаляем папку, удаляем все её содержимое
+        if item.type == .folder {
+            deleteItemsInFolder(item.id)
+        }
+        items.removeAll { $0.id == item.id }
+    }
+    
+    private func deleteItemsInFolder(_ folderId: UUID) {
+        let itemsToDelete = items.filter { $0.parentId == folderId }
+        for item in itemsToDelete {
+            if item.type == .folder {
+                deleteItemsInFolder(item.id)
+            }
+            items.removeAll { $0.id == item.id }
+        }
+    }
+    
     private func addItem() {
         guard !newItemName.isEmpty else { return }
         
@@ -256,7 +339,8 @@ struct ContentView: View {
             name: newItemName,
             type: newItemType,
             gradient: gradient,
-            createdAt: Date()
+            createdAt: Date(),
+            parentId: currentFolderId // Добавляем в текущую папку
         )
         
         withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
