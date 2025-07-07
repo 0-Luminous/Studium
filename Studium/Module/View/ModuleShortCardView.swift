@@ -1,10 +1,10 @@
 import SwiftUI
 
 
-// MARK: - ModuleTaskView
+// MARK: - ModuleShortCardView
 
-struct ModuleTaskView: View {
-    let task: ModuleTask
+struct ModuleShortCardView: View {
+    let task: ModuleShortCard
     let onToggle: () -> Void
     let onDelete: () -> Void
 

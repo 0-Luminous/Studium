@@ -139,7 +139,7 @@ struct ModuleView: View {
                     ScrollView {
                         LazyVGrid(columns: gridColumns, spacing: 20) {
                             ForEach(viewModel.tasks) { task in
-                                ModuleTaskView(task: task) {
+                                ModuleShortCardView(task: task) {
                                     viewModel.toggleTaskCompletion(task)
                                 } onDelete: {
                                     viewModel.deleteTask(task)

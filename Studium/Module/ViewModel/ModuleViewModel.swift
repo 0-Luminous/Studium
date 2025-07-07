@@ -3,7 +3,7 @@ import Foundation
 
 class ModuleViewModel: ObservableObject {
     // MARK: - Published Properties
-    @Published var tasks: [ModuleTask] = [] // Задачи модуля
+    @Published var tasks: [ModuleShortCard] = [] // Задачи модуля
     @Published var showingAddCardType = false // Убираем showingAddOptions
     @Published var showingStudyCards = false // Для отображения режима изучения
     
@@ -17,7 +17,7 @@ class ModuleViewModel: ObservableObject {
     }
     
     // MARK: - Computed Properties
-    var completedTasks: [ModuleTask] {
+    var completedTasks: [ModuleShortCard] {
         tasks.filter { $0.isCompleted }
     }
     
@@ -30,7 +30,7 @@ class ModuleViewModel: ObservableObject {
     func addCard(type: CardType, title: String, content: String, isBothSides: Bool) {
         guard !title.isEmpty else { return }
         
-        let newTask = ModuleTask(
+        let newTask = ModuleShortCard(
             title: title,
             description: content,
             isCompleted: false,
@@ -44,7 +44,7 @@ class ModuleViewModel: ObservableObject {
         }
     }
     
-    func toggleTaskCompletion(_ task: ModuleTask) {
+    func toggleTaskCompletion(_ task: ModuleShortCard) {
         if let index = tasks.firstIndex(where: { $0.id == task.id }) {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                 tasks[index].isCompleted.toggle()
@@ -52,7 +52,7 @@ class ModuleViewModel: ObservableObject {
         }
     }
     
-    func deleteTask(_ task: ModuleTask) {
+    func deleteTask(_ task: ModuleShortCard) {
         withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
             tasks.removeAll { $0.id == task.id }
         }
@@ -129,8 +129,8 @@ enum CardType: String, CaseIterable {
     }
 }
 
-// MARK: - ModuleTask Model
-struct ModuleTask: Identifiable {
+// MARK: - ModuleShortCard Model
+struct ModuleShortCard: Identifiable {
     let id = UUID()
     var title: String
     var description: String
