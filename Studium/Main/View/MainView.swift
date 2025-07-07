@@ -216,6 +216,11 @@ struct MainView: View {
                 viewModel.addFolder(name: name)
             }
         }
+        .fullScreenCover(isPresented: $viewModel.showingModuleView) {
+            if let module = viewModel.selectedModule {
+                ModuleView(module: module)
+            }
+        }
     }
 }
 

@@ -177,12 +177,14 @@ struct AddModuleView: View {
                             .focused($isTextFieldFocused)
                             .foregroundColor(.white)
                     }
+                    .padding(.horizontal, 20)
 
                     // Выбор цвета
                     VStack(alignment: .leading, spacing: 16) {
                         Text("Цветовая схема")
                             .font(.system(size: 18, weight: .medium))
                             .foregroundColor(.white)
+                            .padding(.horizontal, 20)
 
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 16) {
@@ -221,7 +223,6 @@ struct AddModuleView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 20)
                 .padding(.top, 32)
 
                 Spacer()

@@ -9,6 +9,8 @@ class MainViewModel: ObservableObject {
     @Published var showingAddFolder = false
     @Published var currentFolderId: UUID? = nil // Текущая папка (nil = корневая)
     @Published var navigationPath: [MainItem] = [] // Путь навигации
+    @Published var selectedModule: MainItem? = nil // Выбранный модуль для показа
+    @Published var showingModuleView = false // Показывать ли ModuleView
     
     // MARK: - Computed Properties
     
@@ -34,7 +36,9 @@ class MainViewModel: ObservableObject {
         if item.type == .folder {
             navigateToFolder(item)
         } else {
-            print("Tapped on module: \(item.name)")
+            // Навигация к модулю
+            selectedModule = item
+            showingModuleView = true
         }
     }
     
