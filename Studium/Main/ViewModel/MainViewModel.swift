@@ -1,5 +1,6 @@
 import SwiftUI
 import Foundation
+import CoreData
 
 class MainViewModel: ObservableObject {
     // MARK: - Published Properties
@@ -11,6 +12,14 @@ class MainViewModel: ObservableObject {
     @Published var navigationPath: [MainItem] = [] // Путь навигации
     @Published var selectedModule: MainItem? = nil // Выбранный модуль для показа
     @Published var showingModuleView = false // Показывать ли ModuleView
+    
+    // MARK: - CoreData Service
+    private let coreDataService = CoreDataService()
+    
+    // MARK: - Initialization
+    init() {
+        loadItems()
+    }
     
     // MARK: - Computed Properties
     
@@ -27,6 +36,18 @@ class MainViewModel: ObservableObject {
             let path = ["Studium"] + navigationPath.dropLast().map { $0.name }
             return path.joined(separator: " → ")
         }
+    }
+    
+    // MARK: - Data Loading
+    
+    /// Загружает элементы из CoreData
+    func loadItems() {
+        items = coreDataService.fetchAllItemsFromDatabase()
+    }
+    
+    /// Обновляет элементы для текущей папки
+    func refreshCurrentItems() {
+        items = coreDataService.fetchAllItemsFromDatabase()
     }
     
     // MARK: - Navigation Methods
@@ -66,16 +87,36 @@ class MainViewModel: ObservableObject {
     func addModule(name: String, gradient: LinearGradient, description: String) {
         guard !name.isEmpty else { return }
         
-        let newItem = MainItem(
-            name: name,
-            type: .module,
-            gradient: gradient,
-            createdAt: Date(),
-            parentId: currentFolderId
-        )
+        // Извлекаем цвета из градиента (упрощенная реализация)
+        let (startColor, endColor) = extractColorsFromGradient(gradient)
         
-        withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
-            items.append(newItem)
+        if let _ = coreDataService.createModule(
+            name: name,
+            gradientStartColor: startColor,
+            gradientEndColor: endColor,
+            parentId: currentFolderId
+        ) {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                refreshCurrentItems()
+            }
+        }
+    }
+    
+    /// Добавление нового модуля с индексом градиента
+    func addModule(name: String, gradientIndex: Int, description: String) {
+        guard !name.isEmpty else { return }
+        
+        let (startColor, endColor) = getGradientColorsFromIndex(gradientIndex)
+        
+        if let _ = coreDataService.createModule(
+            name: name,
+            gradientStartColor: startColor,
+            gradientEndColor: endColor,
+            parentId: currentFolderId
+        ) {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                refreshCurrentItems()
+            }
         }
     }
     
@@ -83,42 +124,19 @@ class MainViewModel: ObservableObject {
     func addFolder(name: String) {
         guard !name.isEmpty else { return }
         
-        let gradient = LinearGradient(
-            gradient: Gradient(colors: [Color.orange, Color.red]),
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-        
-        let newItem = MainItem(
-            name: name,
-            type: .folder,
-            gradient: gradient,
-            createdAt: Date(),
-            parentId: currentFolderId
-        )
-        
-        withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
-            items.append(newItem)
+        if let _ = coreDataService.createFolder(name: name, parentId: currentFolderId) {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                refreshCurrentItems()
+            }
         }
     }
     
     /// Удаление элемента
     func deleteItem(_ item: MainItem) {
-        // Если удаляем папку, удаляем все её содержимое
-        if item.type == .folder {
-            deleteItemsInFolder(item.id)
-        }
-        items.removeAll { $0.id == item.id }
-    }
-    
-    /// Рекурсивное удаление элементов в папке
-    private func deleteItemsInFolder(_ folderId: UUID) {
-        let itemsToDelete = items.filter { $0.parentId == folderId }
-        for item in itemsToDelete {
-            if item.type == .folder {
-                deleteItemsInFolder(item.id)
-            }
-            items.removeAll { $0.id == item.id }
+        coreDataService.deleteItem(id: item.id, type: item.type)
+        
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+            refreshCurrentItems()
         }
     }
     
@@ -148,5 +166,48 @@ class MainViewModel: ObservableObject {
     func showAddFolder() {
         hideAddOptions()
         showingAddFolder = true
+    }
+    
+    // MARK: - Helper Methods
+    
+    /// Извлекает цвета из градиента для сохранения в CoreData
+    private func extractColorsFromGradient(_ gradient: LinearGradient) -> (String, String) {
+        // Маппинг предустановленных градиентов из AddModuleView
+        let predefinedGradients: [(String, String)] = [
+            ("aquaGreen", "limeGreen"),
+            ("stormBlue", "jungleGreen"),
+            ("green", "teal"),
+            ("oceanBlue", "softTeal"),
+            ("cyan", "blue"),
+            ("blue", "purple"),
+            ("red", "coral"),
+            ("watermelonRed", "amber"),
+            ("neonPink", "watermelonRed"),
+            ("lilacGray", "cherryRed")
+        ]
+        
+        // Для упрощения возвращаем случайную пару цветов из предустановленных
+        // В реальном приложении здесь можно было бы анализировать переданный градиент
+        let randomIndex = Int.random(in: 0..<predefinedGradients.count)
+        return predefinedGradients[randomIndex]
+    }
+    
+    /// Получает цвета градиента по индексу
+    private func getGradientColorsFromIndex(_ index: Int) -> (String, String) {
+        let predefinedGradients: [(String, String)] = [
+            ("aquaGreen", "limeGreen"),
+            ("stormBlue", "jungleGreen"),
+            ("green", "teal"),
+            ("oceanBlue", "softTeal"),
+            ("cyan", "blue"),
+            ("blue", "purple"),
+            ("red", "coral"),
+            ("watermelonRed", "amber"),
+            ("neonPink", "watermelonRed"),
+            ("lilacGray", "cherryRed")
+        ]
+        
+        let validIndex = max(0, min(index, predefinedGradients.count - 1))
+        return predefinedGradients[validIndex]
     }
 }

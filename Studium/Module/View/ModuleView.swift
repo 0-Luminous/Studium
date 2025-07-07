@@ -88,28 +88,28 @@ struct ModuleView: View {
 
                 
                 // Прогресс-бар
-                if !viewModel.tasks.isEmpty {
-                    VStack(spacing: 8) {
-                        HStack {
-                            Text("Прогресс")
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundColor(.white)
-                            Spacer()
-                            Text("\(Int(viewModel.progressPercentage * 100))%")
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundColor(.white)
-                        }
+                // if !viewModel.tasks.isEmpty {
+                //     VStack(spacing: 8) {
+                //         HStack {
+                //             Text("Прогресс")
+                //                 .font(.subheadline)
+                //                 .fontWeight(.medium)
+                //                 .foregroundColor(.white)
+                //             Spacer()
+                //             Text("\(Int(viewModel.progressPercentage * 100))%")
+                //                 .font(.subheadline)
+                //                 .fontWeight(.medium)
+                //                 .foregroundColor(.white)
+                //         }
                         
-                        ProgressView(value: viewModel.progressPercentage)
-                            .progressViewStyle(LinearProgressViewStyle(tint: .white))
-                            .scaleEffect(y: 1.5)
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 12)
-                    .background(Color.black.opacity(0.2))
-                }
+                //         ProgressView(value: viewModel.progressPercentage)
+                //             .progressViewStyle(LinearProgressViewStyle(tint: .white))
+                //             .scaleEffect(y: 1.5)
+                //     }
+                //     .padding(.horizontal, 20)
+                //     .padding(.vertical, 12)
+                //     .background(Color.black.opacity(0.2))
+                // }
                 
                 // Контент модуля
                 if viewModel.tasks.isEmpty {

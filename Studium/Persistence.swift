@@ -14,10 +14,22 @@ struct PersistenceController {
     static let preview: PersistenceController = {
         let result = PersistenceController(inMemory: true)
         let viewContext = result.container.viewContext
-        for _ in 0..<10 {
-            let newItem = Item(context: viewContext)
-            newItem.timestamp = Date()
-        }
+        
+        // Создаем тестовые данные для превью
+        let testFolder = Folder(context: viewContext)
+        testFolder.setValue(UUID(), forKey: "id")
+        testFolder.name = "Тестовая папка"
+        testFolder.createdAt = Date()
+        testFolder.setValue(nil, forKey: "parentId")
+        
+        let testModule = Module(context: viewContext)
+        testModule.setValue(UUID(), forKey: "id")
+        testModule.name = "Тестовый модуль"
+        testModule.gradientStartColor = "blue"
+        testModule.gradientEndColor = "purple"
+        testModule.createdAt = Date()
+        testModule.setValue(nil, forKey: "parentId")
+        
         do {
             try viewContext.save()
         } catch {

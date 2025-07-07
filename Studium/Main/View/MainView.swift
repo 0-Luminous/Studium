@@ -207,9 +207,9 @@ struct MainView: View {
             }
         }
         .sheet(isPresented: $viewModel.showingAddModule) {
-            AddModuleView { name, gradient, description in
-                viewModel.addModule(name: name, gradient: gradient, description: description)
-            }
+            AddModuleView(onCreateModuleWithIndex: { name, gradientIndex, description in
+                viewModel.addModule(name: name, gradientIndex: gradientIndex, description: description)
+            })
         }
         .sheet(isPresented: $viewModel.showingAddFolder) {
             AddFolderView { name in

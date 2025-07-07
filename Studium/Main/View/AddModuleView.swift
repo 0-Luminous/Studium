@@ -15,6 +15,18 @@ struct AddModuleView: View {
     @FocusState private var isTextFieldFocused: Bool
 
     let onCreateModule: (String, LinearGradient, String) -> Void
+    let onCreateModuleWithIndex: ((String, Int, String) -> Void)?
+    
+    // MARK: - Initialization
+    init(onCreateModule: @escaping (String, LinearGradient, String) -> Void) {
+        self.onCreateModule = onCreateModule
+        self.onCreateModuleWithIndex = nil
+    }
+    
+    init(onCreateModuleWithIndex: @escaping (String, Int, String) -> Void) {
+        self.onCreateModule = { _, _, _ in } // Пустая заглушка
+        self.onCreateModuleWithIndex = onCreateModuleWithIndex
+    }
 
     // Предустановленные градиенты для модулей
     private let gradients = [
@@ -249,7 +261,11 @@ struct AddModuleView: View {
                         let impactFeedback = UIImpactFeedbackGenerator(style: .light)
                         impactFeedback.impactOccurred()
 
-                        onCreateModule(moduleName, gradients[selectedGradient], moduleDescription)
+                        if let onCreateModuleWithIndex = onCreateModuleWithIndex {
+                            onCreateModuleWithIndex(moduleName, selectedGradient, moduleDescription)
+                        } else {
+                            onCreateModule(moduleName, gradients[selectedGradient], moduleDescription)
+                        }
                         dismiss()
                     }) {
                         HStack(spacing: 8) {
@@ -273,7 +289,7 @@ struct AddModuleView: View {
 }
 
 #Preview {
-    AddModuleView { name, _, _ in
+    AddModuleView(onCreateModule: { name, _, _ in
         print("Created module: \(name)")
-    }
+    })
 }
