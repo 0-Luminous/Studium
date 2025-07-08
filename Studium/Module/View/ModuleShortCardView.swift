@@ -32,7 +32,7 @@ struct ModuleShortCardView: View {
                 
                 Text(task.title)
                     .font(.system(size: cardSize == .wide ? 14 : 13, weight: .semibold))
-                    .foregroundColor(.black)
+                    .foregroundColor(.white)
                     .strikethrough(task.isCompleted)
                     .multilineTextAlignment(.center)
                     .opacity(task.isCompleted ? 0.7 : 1.0)

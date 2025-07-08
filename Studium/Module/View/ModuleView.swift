@@ -75,30 +75,29 @@ struct ModuleView: View {
     // Размещаем карточки в ряды с учетом широких карточек
     private func arrangeCardsInRows(columnsCount: Int) -> [[ModuleShortCard]] {
         var rows: [[ModuleShortCard]] = []
-        var currentRow: [ModuleShortCard] = []
-        var currentRowWidth = 0
+        var rowWidths: [Int] = [] // Отслеживаем занятое пространство в каждом ряду
         
         for task in viewModel.tasks {
             let size = cardSize(for: task)
             let cardWidth = size == .wide ? 2 : 1
             
-            // Проверяем, помещается ли карточка в текущий ряд
-            if currentRowWidth + cardWidth <= columnsCount {
-                currentRow.append(task)
-                currentRowWidth += cardWidth
-            } else {
-                // Начинаем новый ряд
-                if !currentRow.isEmpty {
-                    rows.append(currentRow)
+            // Ищем подходящий ряд для размещения карточки
+            var placed = false
+            for (index, currentWidth) in rowWidths.enumerated() {
+                if currentWidth + cardWidth <= columnsCount {
+                    // Найден подходящий ряд
+                    rows[index].append(task)
+                    rowWidths[index] += cardWidth
+                    placed = true
+                    break
                 }
-                currentRow = [task]
-                currentRowWidth = cardWidth
             }
-        }
-        
-        // Добавляем последний ряд, если он не пустой
-        if !currentRow.isEmpty {
-            rows.append(currentRow)
+            
+            // Если не нашли подходящий ряд, создаем новый
+            if !placed {
+                rows.append([task])
+                rowWidths.append(cardWidth)
+            }
         }
         
         return rows
@@ -189,9 +188,9 @@ struct ModuleView: View {
                     GeometryReader { geometry in
                         ScrollView {
                             customGridLayout(geometry: geometry)
-                                .padding(.horizontal, 20)
-                                .padding(.top, 20)
-                                .padding(.bottom, 100) // Отступ для кнопок
+                            .padding(.horizontal, 20)
+                            .padding(.top, 20)
+                            .padding(.bottom, 100) // Отступ для кнопок
                         }
                         .animation(.spring(response: 0.6, dampingFraction: 0.8), value: viewModel.tasks.count)
                     }
