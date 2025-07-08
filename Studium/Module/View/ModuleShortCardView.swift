@@ -14,34 +14,64 @@ struct ModuleShortCardView: View {
     
     // Определяем размер карточки на основе длины текста на каждой стороне отдельно
     private var cardSize: CardSize {
+        // Карточка-тест всегда большая (2x2)
+        if task.cardType == .test {
+            return .test
+        }
+        
         let titleLength = task.title.count
         let descriptionLength = task.description.count
         
-        // Карточка считается широкой, если ЛЮБАЯ из сторон > 95 символов
+        // Карточка считается широкой, если ЛЮБАЯ из сторон > 85 символов
         return (titleLength > 85 || descriptionLength > 85) ? .wide : .regular
     }
     
-    private var cardHeight: CGFloat {
-        cardSize == .wide ? 120 : 120 // Высота одинаковая
-    }
-
     var body: some View {
         ZStack {
             // Front Side
             VStack(spacing: 8) {
                 
-                Text(task.title)
-                    .font(.system(size: cardSize == .wide ? 14 : 13, weight: .semibold))
-                    .foregroundColor(.white)
-                    .strikethrough(task.isCompleted)
-                    .multilineTextAlignment(.center)
-                    .opacity(task.isCompleted ? 0.7 : 1.0)
-                    .lineLimit(nil) // Разрешаем неограниченное количество строк
+                if task.cardType == .test {
+                    // Отображение для тестовой карточки
+                    VStack(spacing: 12) {
+                        Text("Тест")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(.white.opacity(0.7))
+                            .textCase(.uppercase)
+                        
+                        Text(task.title)
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(nil)
+                        
+                        Spacer()
+                        
+                        VStack(spacing: 4) {
+                            Image(systemName: "hand.tap")
+                                .font(.system(size: 16))
+                                .foregroundColor(.white.opacity(0.5))
+                            
+                            Text("Нажмите для ответов")
+                                .font(.caption2)
+                                .foregroundColor(.white.opacity(0.6))
+                        }
+                    }
+                } else {
+                    // Отображение для обычных карточек
+                    Text(task.title)
+                        .font(.system(size: cardSize == .wide ? 14 : 13, weight: .semibold))
+                        .foregroundColor(.white)
+                        .strikethrough(task.isCompleted)
+                        .multilineTextAlignment(.center)
+                        .opacity(task.isCompleted ? 0.7 : 1.0)
+                        .lineLimit(nil)
+                }
                 
             }
             .padding(cardSize == .wide ? 20 : 16)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .frame(height: cardHeight)
             .background(
                 RoundedRectangle(cornerRadius: 16)
                     .fill(
@@ -77,16 +107,62 @@ struct ModuleShortCardView: View {
             // Back Side
             VStack(spacing: 8) {
                 
-                Text(!task.description.isEmpty ? task.description : "Нет описания")
-                    .font(.system(size: cardSize == .wide ? 14 : 13))
-                    .foregroundColor(!task.description.isEmpty ? .white : .gray)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(nil) // Разрешаем неограниченное количество строк
+                if task.cardType == .test {
+                    // Отображение ответа для тестовой карточки
+                    VStack(spacing: 8) {
+                        Text("Ответы")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(.white.opacity(0.7))
+                            .textCase(.uppercase)
+                        
+                        if !task.description.isEmpty {
+                            VStack(alignment: .leading, spacing: 6) {
+                                ForEach(parseTestAnswers(task.description), id: \.self) { answer in
+                                    HStack(alignment: .top, spacing: 8) {
+                                        Image(systemName: answer.isCorrect ? "checkmark.circle.fill" : "xmark.circle.fill")
+                                            .font(.system(size: 12))
+                                            .foregroundColor(answer.isCorrect ? .green : .red)
+                                            .padding(.top, 2)
+                                        
+                                        Text(answer.text)
+                                            .font(.system(size: 13))
+                                            .foregroundColor(.white)
+                                            .multilineTextAlignment(.leading)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                    }
+                                }
+                            }
+                        } else {
+                            Text("Нет ответов")
+                                .font(.system(size: 14))
+                                .foregroundColor(.gray)
+                        }
+                        
+                        Spacer()
+                        
+                        VStack(spacing: 4) {
+                            Image(systemName: "hand.tap")
+                                .font(.system(size: 16))
+                                .foregroundColor(.white.opacity(0.5))
+                            
+                            Text("Нажмите чтобы вернуться")
+                                .font(.caption2)
+                                .foregroundColor(.white.opacity(0.6))
+                        }
+                    }
+                } else {
+                    // Отображение для обычных карточек
+                    Text(!task.description.isEmpty ? task.description : "Нет описания")
+                        .font(.system(size: cardSize == .wide ? 14 : 13))
+                        .foregroundColor(!task.description.isEmpty ? .white : .gray)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(nil)
+                }
                 
             }
             .padding(cardSize == .wide ? 20 : 16)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .frame(height: cardHeight)
             .background(
                 RoundedRectangle(cornerRadius: 16)
                     .fill(
@@ -170,6 +246,7 @@ struct ModuleShortCardView: View {
 enum CardSize {
     case regular // До 95 символов включительно на любой стороне
     case wide    // Больше 95 символов на любой стороне
+    case test    // Тестовая карточка (2x2)
 }
 
 // MARK: - Press Gesture Extension
@@ -184,5 +261,36 @@ extension View {
                     onRelease()
                 }
         )
+    }
+}
+
+// MARK: - Test Answer Model
+private struct TestAnswer: Hashable {
+    let text: String
+    let isCorrect: Bool
+}
+
+// MARK: - Test Answer Parser
+private extension ModuleShortCardView {
+    func parseTestAnswers(_ content: String) -> [TestAnswer] {
+        var answers: [TestAnswer] = []
+        let lines = content.components(separatedBy: .newlines)
+        
+        for line in lines {
+            if line.hasPrefix("ПРАВИЛЬНЫЙ: ") {
+                let answerText = String(line.dropFirst("ПРАВИЛЬНЫЙ: ".count))
+                answers.append(TestAnswer(text: answerText, isCorrect: true))
+            } else if line.hasPrefix("НЕПРАВИЛЬНЫЕ: ") {
+                let wrongAnswersText = String(line.dropFirst("НЕПРАВИЛЬНЫЕ: ".count))
+                let wrongAnswers = wrongAnswersText.components(separatedBy: ", ")
+                for wrongAnswer in wrongAnswers {
+                    if !wrongAnswer.trimmingCharacters(in: .whitespaces).isEmpty {
+                        answers.append(TestAnswer(text: wrongAnswer.trimmingCharacters(in: .whitespaces), isCorrect: false))
+                    }
+                }
+            }
+        }
+        
+        return answers
     }
 }

@@ -25,6 +25,11 @@ struct ModuleView: View {
     
     // Определяем размер карточки на основе длины текста
     private func cardSize(for task: ShortCardModel) -> CardSize {
+        // Карточка-тест всегда большая (2x2)
+        if task.cardType == .test {
+            return .test
+        }
+        
         let titleLength = task.title.count
         let descriptionLength = task.description.count
         return (titleLength > 85 || descriptionLength > 85) ? .wide : .regular
@@ -37,57 +42,93 @@ struct ModuleView: View {
         return max(2, Int((availableWidth + cardSpacing) / (minCardWidth + cardSpacing)))
     }
     
-    // Кастомная сетка для поддержки широких карточек
-    private func customGridLayout(geometry: GeometryProxy) -> some View {
+    // Простая сетка с поддержкой тестовых карточек
+    private func simpleGridLayout(geometry: GeometryProxy) -> some View {
         let columnsCount = cardsPerRow(for: geometry)
         let cardWidth = (geometry.size.width - horizontalPadding - CGFloat(columnsCount - 1) * cardSpacing) / CGFloat(columnsCount)
         let wideCardWidth = cardWidth * 2 + cardSpacing
+        let normalCardHeight: CGFloat = 120
+        let testCardHeight: CGFloat = normalCardHeight * 2 + cardSpacing // Высота двух карточек + отступ
+        
+        let arrangedCards = arrangeCardsInRows(columnsCount: columnsCount)
         
         return VStack(spacing: cardSpacing) {
-            ForEach(arrangeCardsInRows(columnsCount: columnsCount), id: \.self) { row in
-                HStack(spacing: cardSpacing) {
-                    ForEach(row, id: \.id) { task in
-                        let size = cardSize(for: task)
+            ForEach(Array(arrangedCards.enumerated()), id: \.offset) { rowIndex, row in
+                // Пропускаем пустые ряды, которые заблокированы тестовыми карточками
+                if !row.isEmpty {
+                    HStack(alignment: .top, spacing: cardSpacing) {
+                        ForEach(row, id: \.id) { task in
+                            let size = cardSize(for: task)
+                            
+                            ModuleShortCardView(
+                                task: task,
+                                onToggle: {
+                                    viewModel.toggleTaskCompletion(task)
+                                },
+                                onDelete: {
+                                    viewModel.deleteTask(task)
+                                },
+                                isDeleting: viewModel.deletingTaskIds.contains(task.id)
+                            )
+                            .frame(
+                                width: size == .test ? wideCardWidth : (size == .wide ? wideCardWidth : cardWidth),
+                                height: size == .test ? testCardHeight : normalCardHeight
+                            )
+                            .transition(.asymmetric(
+                                insertion: .scale(scale: 0.8).combined(with: .opacity),
+                                removal: .scale(scale: 0.1).combined(with: .opacity)
+                            ))
+                        }
                         
-                        ModuleShortCardView(
-                            task: task,
-                            onToggle: {
-                                viewModel.toggleTaskCompletion(task)
-                            },
-                            onDelete: {
-                                viewModel.deleteTask(task)
-                            },
-                            isDeleting: viewModel.deletingTaskIds.contains(task.id)
-                        )
-                        .frame(width: size == .wide ? wideCardWidth : cardWidth)
-                        .transition(.asymmetric(
-                            insertion: .scale(scale: 0.8).combined(with: .opacity),
-                            removal: .scale(scale: 0.1).combined(with: .opacity)
-                        ))
+                        Spacer()
                     }
-                    
-                    Spacer()
                 }
             }
         }
     }
     
-    // Размещаем карточки в ряды с учетом широких карточек
+    // Размещаем карточки в ряды с учетом широких карточек и тестовых карточек
     private func arrangeCardsInRows(columnsCount: Int) -> [[ShortCardModel]] {
         var rows: [[ShortCardModel]] = []
         var rowWidths: [Int] = [] // Отслеживаем занятое пространство в каждом ряду
+        var blockedRows: Set<Int> = [] // Ряды, заблокированные тестовыми карточками
         
         for task in viewModel.tasks {
             let size = cardSize(for: task)
-            let cardWidth = size == .wide ? 2 : 1
+            let cardWidth = size == .wide ? 2 : (size == .test ? 2 : 1)
             
             // Ищем подходящий ряд для размещения карточки
             var placed = false
             for (index, currentWidth) in rowWidths.enumerated() {
-                if currentWidth + cardWidth <= columnsCount {
+                // Проверяем, что ряд не заблокирован и есть место
+                if !blockedRows.contains(index) && currentWidth + cardWidth <= columnsCount {
+                    // Для тестовых карточек проверяем, что следующий ряд тоже свободен
+                    if size == .test {
+                        let nextRowIndex = index + 1
+                        // Проверяем, что следующий ряд существует и не заблокирован
+                        if nextRowIndex < rowWidths.count && blockedRows.contains(nextRowIndex) {
+                            continue // Не можем разместить здесь
+                        }
+                        // Если следующий ряд не существует, он будет создан
+                    }
+                    
                     // Найден подходящий ряд
                     rows[index].append(task)
                     rowWidths[index] += cardWidth
+                    
+                    // Если это тестовая карточка, блокируем следующий ряд
+                    if size == .test {
+                        let nextRowIndex = index + 1
+                        // Создаем следующий ряд, если его нет
+                        while rows.count <= nextRowIndex {
+                            rows.append([])
+                            rowWidths.append(0)
+                        }
+                        // Блокируем следующий ряд
+                        blockedRows.insert(nextRowIndex)
+                        rowWidths[nextRowIndex] = columnsCount // Полностью блокируем ряд
+                    }
+                    
                     placed = true
                     break
                 }
@@ -95,8 +136,17 @@ struct ModuleView: View {
             
             // Если не нашли подходящий ряд, создаем новый
             if !placed {
+                let newRowIndex = rows.count
                 rows.append([task])
                 rowWidths.append(cardWidth)
+                
+                // Если это тестовая карточка, блокируем следующий ряд
+                if size == .test {
+                    let nextRowIndex = newRowIndex + 1
+                    rows.append([]) // Создаем пустой следующий ряд
+                    rowWidths.append(columnsCount) // Полностью блокируем его
+                    blockedRows.insert(nextRowIndex)
+                }
             }
         }
         
@@ -184,10 +234,10 @@ struct ModuleView: View {
                     }
                     .padding(.horizontal, 40)
                 } else {
-                    // Кастомная сетка карточек
+                    // Простая сетка карточек
                     GeometryReader { geometry in
                         ScrollView {
-                            customGridLayout(geometry: geometry)
+                            simpleGridLayout(geometry: geometry)
                             .padding(.horizontal, 20)
                             .padding(.top, 20)
                             .padding(.bottom, 100) // Отступ для кнопок
