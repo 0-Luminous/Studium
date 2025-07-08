@@ -37,10 +37,10 @@ struct ModuleShortCardView: View {
                             gradient: Gradient(colors: [
                                 task.isCompleted
                                     ? Color.gray.opacity(0.25)
-                                    : Color.accentColor.opacity(0.85),
+                                    : Color.kiwi.opacity(0.85),
                                 task.isCompleted
                                     ? Color.gray.opacity(0.18)
-                                    : Color.accentColor.opacity(0.65)
+                                    : Color.green.opacity(0.65)
                             ]),
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
@@ -87,12 +87,8 @@ struct ModuleShortCardView: View {
                     .fill(
                         LinearGradient(
                             gradient: Gradient(colors: [
-                                task.isCompleted
-                                    ? Color.gray.opacity(0.25)
-                                    : Color.accentColor.opacity(0.85),
-                                task.isCompleted
-                                    ? Color.gray.opacity(0.18)
-                                    : Color.accentColor.opacity(0.65)
+                                Color.charcoal.opacity(0.8),
+                                Color.grayCharcoal.opacity(0.6)
                             ]),
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
@@ -101,7 +97,7 @@ struct ModuleShortCardView: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 20)
-                    .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                    .stroke(Color.green, lineWidth: 2)
             )
             .shadow(
                 color: .black.opacity(task.isCompleted ? 0.08 : 0.18),
@@ -117,18 +113,6 @@ struct ModuleShortCardView: View {
             )
             .animation(.spring(response: 0.4, dampingFraction: 0.7), value: isFlipped)
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isPressed)
-
-            // Индикатор "в обе стороны" (только на лицевой стороне)
-            if task.isBothSides && !isFlipped {
-                HStack(spacing: 4) {
-                    Image(systemName: "arrow.triangle.2.circlepath")
-                        .font(.caption2)
-                }
-                .padding(.trailing, 10)
-                .padding(.vertical, 4)
-                .padding([.bottom, .leading], 10)
-                .transition(.scale)
-            }
         }
         .contentShape(.contextMenuPreview, RoundedRectangle(cornerRadius: 20))
         .onTapGesture {

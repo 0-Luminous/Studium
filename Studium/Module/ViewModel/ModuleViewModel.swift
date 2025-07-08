@@ -139,19 +139,19 @@ enum CardType: String, CaseIterable {
         switch self {
         case .short:
             return LinearGradient(
-                gradient: Gradient(colors: [Color.green, Color.teal]),
+                gradient: Gradient(colors: [Color.green, Color.kiwi]),
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
         case .regular:
             return LinearGradient(
-                gradient: Gradient(colors: [Color.blue, Color.purple]),
+                gradient: Gradient(colors: [Color.blue, Color.oceanBlue]),
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
         case .test:
             return LinearGradient(
-                gradient: Gradient(colors: [Color.orange, Color.red]),
+                gradient: Gradient(colors: [Color.watermelonRed, Color.red]),
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
