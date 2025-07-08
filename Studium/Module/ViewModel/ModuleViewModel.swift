@@ -6,6 +6,7 @@ class ModuleViewModel: ObservableObject {
     @Published var tasks: [ModuleShortCard] = [] // Задачи модуля
     @Published var showingAddCardType = false // Убираем showingAddOptions
     @Published var showingStudyCards = false // Для отображения режима изучения
+    @Published var deletingTaskIds: Set<UUID> = [] // Карточки в процессе удаления
     
     // MARK: - Properties
     let module: MainItem
@@ -69,13 +70,27 @@ class ModuleViewModel: ObservableObject {
     }
     
     func deleteTask(_ task: ModuleShortCard) {
-        do {
-            try cardRepository.deleteCard(with: task.id)
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
-                tasks.removeAll { $0.id == task.id }
+        // Добавляем ID в список удаляемых для анимации
+        deletingTaskIds.insert(task.id)
+        
+        // Запускаем анимацию уменьшения
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+            // Анимация уменьшения будет обработана в View
+        }
+        
+        // Удаляем из Core Data и массива с задержкой для анимации
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            do {
+                try self.cardRepository.deleteCard(with: task.id)
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                    self.tasks.removeAll { $0.id == task.id }
+                    self.deletingTaskIds.remove(task.id)
+                }
+            } catch {
+                print("Ошибка удаления карточки: \(error)")
+                // Убираем из списка удаляемых в случае ошибки
+                self.deletingTaskIds.remove(task.id)
             }
-        } catch {
-            print("Ошибка удаления карточки: \(error)")
         }
     }
     

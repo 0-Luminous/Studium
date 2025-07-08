@@ -18,20 +18,23 @@ struct ModuleView: View {
         self._viewModel = StateObject(wrappedValue: ModuleViewModel(module: module))
     }
     
-    // Вычисляемые свойства для адаптивной сетки
-    private var gridColumns: [GridItem] {
-        let spacing: CGFloat = 16
-        let minItemWidth: CGFloat = 150
+    // Адаптивная сетка для iOS-стиля
+    private func adaptiveColumns(for geometry: GeometryProxy) -> [GridItem] {
+        let screenWidth = geometry.size.width
+        let horizontalPadding: CGFloat = 40 // 20 с каждой стороны
+        let cardSpacing: CGFloat = 16
+        let minCardWidth: CGFloat = 160
         
-        return [
-            GridItem(.adaptive(minimum: minItemWidth, maximum: 200), spacing: spacing),
-        ]
+        let availableWidth = screenWidth - horizontalPadding
+        let cardsPerRow = max(1, Int((availableWidth + cardSpacing) / (minCardWidth + cardSpacing)))
+        
+        return Array(repeating: GridItem(.flexible(), spacing: cardSpacing), count: cardsPerRow)
     }
     
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
-                // Заголовок с навигацией (используем градиент модуля вместо thinMaterial)
+                // Заголовок с навигацией
                 HStack {
                     Button(action: {
                         dismiss()
@@ -46,7 +49,6 @@ struct ModuleView: View {
                     .padding(.leading, 20)
                     
                     VStack(alignment: .leading, spacing: 2) {
-                        // Название модуля вместо "Studium"
                         Text(module.name)
                             .font(.largeTitle)
                             .fontWeight(.bold)
@@ -76,7 +78,6 @@ struct ModuleView: View {
                     Spacer()
                 }
                 .background(
-                    // Используем градиент модуля вместо .thinMaterial
                     Rectangle()
                         .fill(module.gradient)
                         .overlay(
@@ -85,31 +86,6 @@ struct ModuleView: View {
                         )
                         .ignoresSafeArea(.all, edges: .top)
                 )
-
-                
-                // Прогресс-бар
-                // if !viewModel.tasks.isEmpty {
-                //     VStack(spacing: 8) {
-                //         HStack {
-                //             Text("Прогресс")
-                //                 .font(.subheadline)
-                //                 .fontWeight(.medium)
-                //                 .foregroundColor(.white)
-                //             Spacer()
-                //             Text("\(Int(viewModel.progressPercentage * 100))%")
-                //                 .font(.subheadline)
-                //                 .fontWeight(.medium)
-                //                 .foregroundColor(.white)
-                //         }
-                        
-                //         ProgressView(value: viewModel.progressPercentage)
-                //             .progressViewStyle(LinearProgressViewStyle(tint: .white))
-                //             .scaleEffect(y: 1.5)
-                //     }
-                //     .padding(.horizontal, 20)
-                //     .padding(.vertical, 12)
-                //     .background(Color.black.opacity(0.2))
-                // }
                 
                 // Контент модуля
                 if viewModel.tasks.isEmpty {
@@ -136,19 +112,32 @@ struct ModuleView: View {
                     }
                     .padding(.horizontal, 40)
                 } else {
-                    ScrollView {
-                        LazyVGrid(columns: gridColumns, spacing: 20) {
-                            ForEach(viewModel.tasks) { task in
-                                ModuleShortCardView(task: task) {
-                                    viewModel.toggleTaskCompletion(task)
-                                } onDelete: {
-                                    viewModel.deleteTask(task)
+                    // Сетка карточек
+                    GeometryReader { geometry in
+                        ScrollView {
+                            LazyVGrid(columns: adaptiveColumns(for: geometry), spacing: 16) {
+                                ForEach(viewModel.tasks) { task in
+                                    ModuleShortCardView(
+                                        task: task,
+                                        onToggle: {
+                                            viewModel.toggleTaskCompletion(task)
+                                        },
+                                        onDelete: {
+                                            viewModel.deleteTask(task)
+                                        },
+                                        isDeleting: viewModel.deletingTaskIds.contains(task.id)
+                                    )
+                                    .transition(.asymmetric(
+                                        insertion: .scale(scale: 0.8).combined(with: .opacity),
+                                        removal: .scale(scale: 0.1).combined(with: .opacity)
+                                    ))
                                 }
                             }
+                            .padding(.horizontal, 20)
+                            .padding(.top, 20)
+                            .padding(.bottom, 100) // Отступ для кнопок
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.top, 20)
-                        .padding(.bottom, 100) // Отступ для кнопок
+                        .animation(.spring(response: 0.6, dampingFraction: 0.8), value: viewModel.tasks.count)
                     }
                 }
             }
@@ -158,12 +147,10 @@ struct ModuleView: View {
             VStack {
                 Spacer()
                 
-                // Панель с кнопками
                 HStack(spacing: 16) {
-                    // Пустое пространство слева для баланса
                     Spacer()
                     
-                    // Кнопка "Учить карточки" - показываем только если есть карточки
+                    // Кнопка "Учить карточки"
                     if !viewModel.tasks.isEmpty {
                         Button(action: {
                             viewModel.startStudyingCards()
@@ -186,6 +173,7 @@ struct ModuleView: View {
                             )
                         }
                         .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
                     
                     Spacer()
@@ -213,7 +201,6 @@ struct ModuleView: View {
             }
         }
         .sheet(isPresented: $viewModel.showingStudyCards) {
-            // Здесь будет view для изучения карточек
             StudyCardsView(tasks: viewModel.tasks)
         }
         .navigationBarHidden(true)
@@ -235,3 +222,4 @@ struct ModuleView: View {
     
     ModuleView(module: sampleModule)
 }
+

@@ -10,6 +10,8 @@ struct ShortCardView: View {
     @State private var title = ""
     @State private var content = ""
     @State private var isBothSides = true
+    
+    private let maxCharacterLimit = 95
 
     var body: some View {
         NavigationView {
@@ -64,14 +66,26 @@ struct ShortCardView: View {
                     .font(.subheadline)
                     .fontWeight(.medium)
                     .foregroundColor(.white)
+                
+                Spacer()
+                
+                // Счетчик символов для заголовка
+                Text("\(title.count)/\(maxCharacterLimit)")
+                    .font(.caption)
+                    .foregroundColor(title.count > maxCharacterLimit ? .red : .gray)
             }
 
             TextField("Введите внешнюю сторону карточки", text: $title)
                 .font(.body)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
-                .background(fieldBackground(isEmpty: title.isEmpty))
+                .background(fieldBackground(isEmpty: title.isEmpty, isOverLimit: title.count > maxCharacterLimit))
                 .foregroundColor(.white)
+                .onChange(of: title) { newValue in
+                    if newValue.count > maxCharacterLimit {
+                        title = String(newValue.prefix(maxCharacterLimit))
+                    }
+                }
         }
     }
     
@@ -87,6 +101,13 @@ struct ShortCardView: View {
                     .font(.subheadline)
                     .fontWeight(.medium)
                     .foregroundColor(.white)
+                
+                Spacer()
+                
+                // Счетчик символов для содержимого
+                Text("\(content.count)/\(maxCharacterLimit)")
+                    .font(.caption)
+                    .foregroundColor(content.count > maxCharacterLimit ? .red : .gray)
             }
 
             TextField(
@@ -97,9 +118,14 @@ struct ShortCardView: View {
             .font(.body)
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
-            .background(fieldBackground(isEmpty: content.isEmpty))
+            .background(fieldBackground(isEmpty: content.isEmpty, isOverLimit: content.count > maxCharacterLimit))
             .foregroundColor(.white)
             .lineLimit(3...8)
+            .onChange(of: content) { newValue in
+                if newValue.count > maxCharacterLimit {
+                    content = String(newValue.prefix(maxCharacterLimit))
+                }
+            }
         }
     }
     
@@ -210,12 +236,16 @@ struct ShortCardView: View {
     }
     
     // MARK: - Helper Views
-    private func fieldBackground(isEmpty: Bool) -> some View {
+    private func fieldBackground(isEmpty: Bool, isOverLimit: Bool = false) -> some View {
         RoundedRectangle(cornerRadius: 12)
             .fill(Color.white.opacity(0.1))
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(isEmpty ? Color.gray.opacity(0.3) : Color.blue.opacity(0.8), lineWidth: 1.5)
+                    .stroke(
+                        isOverLimit ? Color.red.opacity(0.8) : 
+                        isEmpty ? Color.gray.opacity(0.3) : Color.blue.opacity(0.8), 
+                        lineWidth: 1.5
+                    )
             )
     }
     
@@ -249,6 +279,7 @@ struct ShortCardView: View {
     
     // MARK: - Computed Properties
     private var isFormValid: Bool {
-        !title.isEmpty && !content.isEmpty
+        !title.isEmpty && !content.isEmpty && 
+        title.count <= maxCharacterLimit && content.count <= maxCharacterLimit
     }
 }
