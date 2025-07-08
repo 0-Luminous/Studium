@@ -24,7 +24,7 @@ struct ModuleView: View {
     private let minCardWidth: CGFloat = 160
     
     // Определяем размер карточки на основе длины текста
-    private func cardSize(for task: ModuleShortCard) -> CardSize {
+    private func cardSize(for task: ShortCardModel) -> CardSize {
         let titleLength = task.title.count
         let descriptionLength = task.description.count
         return (titleLength > 85 || descriptionLength > 85) ? .wide : .regular
@@ -73,8 +73,8 @@ struct ModuleView: View {
     }
     
     // Размещаем карточки в ряды с учетом широких карточек
-    private func arrangeCardsInRows(columnsCount: Int) -> [[ModuleShortCard]] {
-        var rows: [[ModuleShortCard]] = []
+    private func arrangeCardsInRows(columnsCount: Int) -> [[ShortCardModel]] {
+        var rows: [[ShortCardModel]] = []
         var rowWidths: [Int] = [] // Отслеживаем занятое пространство в каждом ряду
         
         for task in viewModel.tasks {

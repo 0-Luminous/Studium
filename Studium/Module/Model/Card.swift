@@ -1,11 +1,45 @@
 import Foundation
 import CoreData
 
+// MARK: - ShortCardModel
+
+struct ShortCardModel: Identifiable, Hashable {
+    let id: UUID
+    var title: String
+    var description: String
+    var isCompleted: Bool = false
+    var cardType: CardType = .regular
+    var isBothSides: Bool = true
+    let moduleId: UUID
+    let createdAt: Date
+
+    init(id: UUID = UUID(), title: String, description: String, isCompleted: Bool = false, cardType: CardType = .regular, isBothSides: Bool = true, moduleId: UUID, createdAt: Date = Date()) {
+        self.id = id
+        self.title = title
+        self.description = description
+        self.isCompleted = isCompleted
+        self.cardType = cardType
+        self.isBothSides = isBothSides
+        self.moduleId = moduleId
+        self.createdAt = createdAt
+    }
+
+    // MARK: - Hashable Implementation
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+
+    static func == (lhs: ShortCardModel, rhs: ShortCardModel) -> Bool {
+        return lhs.id == rhs.id
+    }
+}
+
 // MARK: - Card Extension
 extension Card {
     
-    /// Инициализирует Card из ModuleShortCard
-    convenience init(from moduleCard: ModuleShortCard, context: NSManagedObjectContext) {
+    /// Инициализирует Card из ShortCardModel
+    convenience init(from moduleCard: ShortCardModel, context: NSManagedObjectContext) {
         self.init(context: context)
         self.id = moduleCard.id
         self.title = moduleCard.title
@@ -17,9 +51,9 @@ extension Card {
         self.createdAt = moduleCard.createdAt
     }
     
-    /// Конвертирует Card в ModuleShortCard
-    func toModuleShortCard() -> ModuleShortCard {
-        return ModuleShortCard(
+    /// Конвертирует Card в ShortCardModel
+    func toShortCardModel() -> ShortCardModel {
+        return ShortCardModel(
             id: self.id ?? UUID(),
             title: self.title ?? "",
             description: self.content ?? "",
@@ -41,7 +75,7 @@ class CardRepository {
     }
     
     /// Сохраняет карточку в Core Data
-    func saveCard(_ moduleCard: ModuleShortCard) throws {
+    func saveCard(_ moduleCard: ShortCardModel) throws {
         // Проверяем, существует ли уже карточка с таким ID
         let request: NSFetchRequest<Card> = Card.fetchRequest()
         request.predicate = NSPredicate(format: "id == %@", moduleCard.id as CVarArg)
@@ -71,13 +105,13 @@ class CardRepository {
     }
     
     /// Загружает все карточки для указанного модуля
-    func fetchCards(for moduleId: UUID) throws -> [ModuleShortCard] {
+    func fetchCards(for moduleId: UUID) throws -> [ShortCardModel] {
         let request: NSFetchRequest<Card> = Card.fetchRequest()
         request.predicate = NSPredicate(format: "moduleId == %@", moduleId as CVarArg)
         request.sortDescriptors = [NSSortDescriptor(keyPath: \Card.createdAt, ascending: true)]
         
         let cards = try context.fetch(request)
-        return cards.map { $0.toModuleShortCard() }
+        return cards.map { $0.toShortCardModel() }
     }
     
     /// Удаляет карточку по ID

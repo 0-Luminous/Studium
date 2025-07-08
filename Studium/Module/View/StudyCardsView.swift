@@ -8,13 +8,13 @@
 import SwiftUI
 
 struct StudyCardsView: View {
-    let tasks: [ModuleShortCard]
+    let tasks: [ShortCardModel]
     @Environment(\.dismiss) private var dismiss
     @State private var currentCardIndex = 0
     @State private var isFlipped = false
     @State private var cardOffset = CGSize.zero
     
-    private var currentTask: ModuleShortCard? {
+    private var currentTask: ShortCardModel? {
         guard !tasks.isEmpty, currentCardIndex < tasks.count else { return nil }
         return tasks[currentCardIndex]
     }
@@ -125,7 +125,7 @@ struct StudyCardsView: View {
     }
     
     // MARK: - Card Content View
-    private func cardContentView(task: ModuleShortCard, geometry: GeometryProxy) -> some View {
+    private func cardContentView(task: ShortCardModel, geometry: GeometryProxy) -> some View {
         VStack(spacing: 0) {
             Spacer()
             
@@ -398,7 +398,7 @@ struct StudyCardsView: View {
 
 #Preview {
     let sampleTasks = [
-        ModuleShortCard(
+        ShortCardModel(
             title: "Что такое Swift?", 
             description: "Swift - это мощный и интуитивно понятный язык программирования для iOS, macOS, watchOS и tvOS.",
             isCompleted: false,
@@ -406,7 +406,7 @@ struct StudyCardsView: View {
             isBothSides: true,
             moduleId: UUID()
         ),
-        ModuleShortCard(
+        ShortCardModel(
             title: "Что такое Optional?", 
             description: "Optional - это тип данных, который может содержать значение или nil.",
             isCompleted: false,

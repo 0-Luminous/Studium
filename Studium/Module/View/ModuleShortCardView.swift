@@ -4,7 +4,7 @@ import SwiftUI
 // MARK: - ModuleShortCardView
 
 struct ModuleShortCardView: View {
-    let task: ModuleShortCard
+    let task: ShortCardModel
     let onToggle: () -> Void
     let onDelete: () -> Void
     let isDeleting: Bool

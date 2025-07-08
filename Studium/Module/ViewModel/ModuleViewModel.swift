@@ -3,7 +3,7 @@ import Foundation
 
 class ModuleViewModel: ObservableObject {
     // MARK: - Published Properties
-    @Published var tasks: [ModuleShortCard] = [] // Задачи модуля
+    @Published var tasks: [ShortCardModel] = [] // Задачи модуля
     @Published var showingAddCardType = false // Убираем showingAddOptions
     @Published var showingStudyCards = false // Для отображения режима изучения
     @Published var deletingTaskIds: Set<UUID> = [] // Карточки в процессе удаления
@@ -20,7 +20,7 @@ class ModuleViewModel: ObservableObject {
     }
     
     // MARK: - Computed Properties
-    var completedTasks: [ModuleShortCard] {
+    var completedTasks: [ShortCardModel] {
         tasks.filter { $0.isCompleted }
     }
     
@@ -33,7 +33,7 @@ class ModuleViewModel: ObservableObject {
     func addCard(type: CardType, title: String, content: String, isBothSides: Bool) {
         guard !title.isEmpty else { return }
         
-        let newTask = ModuleShortCard(
+        let newTask = ShortCardModel(
             title: title,
             description: content,
             isCompleted: false,
@@ -52,7 +52,7 @@ class ModuleViewModel: ObservableObject {
         }
     }
     
-    func toggleTaskCompletion(_ task: ModuleShortCard) {
+    func toggleTaskCompletion(_ task: ShortCardModel) {
         if let index = tasks.firstIndex(where: { $0.id == task.id }) {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                 tasks[index].isCompleted.toggle()
@@ -69,7 +69,7 @@ class ModuleViewModel: ObservableObject {
         }
     }
     
-    func deleteTask(_ task: ModuleShortCard) {
+    func deleteTask(_ task: ShortCardModel) {
         // Добавляем ID в список удаляемых для анимации
         deletingTaskIds.insert(task.id)
         
@@ -174,34 +174,4 @@ enum CardType: String, CaseIterable {
     }
 }
 
-// MARK: - ModuleShortCard Model
-struct ModuleShortCard: Identifiable, Hashable {
-    let id: UUID
-    var title: String
-    var description: String
-    var isCompleted: Bool = false
-    var cardType: CardType = .regular
-    var isBothSides: Bool = true
-    let moduleId: UUID
-    let createdAt: Date
-    
-    init(id: UUID = UUID(), title: String, description: String, isCompleted: Bool = false, cardType: CardType = .regular, isBothSides: Bool = true, moduleId: UUID, createdAt: Date = Date()) {
-        self.id = id
-        self.title = title
-        self.description = description
-        self.isCompleted = isCompleted
-        self.cardType = cardType
-        self.isBothSides = isBothSides
-        self.moduleId = moduleId
-        self.createdAt = createdAt
-    }
-    
-    // MARK: - Hashable Implementation
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
-    }
-    
-    static func == (lhs: ModuleShortCard, rhs: ModuleShortCard) -> Bool {
-        return lhs.id == rhs.id
-    }
-}
+
