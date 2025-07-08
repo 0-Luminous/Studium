@@ -18,19 +18,92 @@ struct ModuleView: View {
         self._viewModel = StateObject(wrappedValue: ModuleViewModel(module: module))
     }
     
-    // Адаптивная сетка для iOS-стиля
-    private func adaptiveColumns(for geometry: GeometryProxy) -> [GridItem] {
-        let screenWidth = geometry.size.width
-        let horizontalPadding: CGFloat = 40 // 20 с каждой стороны
-        let cardSpacing: CGFloat = 16
-        let minCardWidth: CGFloat = 160
-        
-        let availableWidth = screenWidth - horizontalPadding
-        let cardsPerRow = max(1, Int((availableWidth + cardSpacing) / (minCardWidth + cardSpacing)))
-        
-        return Array(repeating: GridItem(.flexible(), spacing: cardSpacing), count: cardsPerRow)
+    // Параметры сетки
+    private let cardSpacing: CGFloat = 16
+    private let horizontalPadding: CGFloat = 40
+    private let minCardWidth: CGFloat = 160
+    
+    // Определяем размер карточки на основе длины текста
+    private func cardSize(for task: ModuleShortCard) -> CardSize {
+        let titleLength = task.title.count
+        let descriptionLength = task.description.count
+        return (titleLength > 95 || descriptionLength > 95) ? .wide : .regular
     }
     
+    // Вычисляем количество колонок для обычных карточек
+    private func cardsPerRow(for geometry: GeometryProxy) -> Int {
+        let screenWidth = geometry.size.width
+        let availableWidth = screenWidth - horizontalPadding
+        return max(2, Int((availableWidth + cardSpacing) / (minCardWidth + cardSpacing)))
+    }
+    
+    // Кастомная сетка для поддержки широких карточек
+    private func customGridLayout(geometry: GeometryProxy) -> some View {
+        let columnsCount = cardsPerRow(for: geometry)
+        let cardWidth = (geometry.size.width - horizontalPadding - CGFloat(columnsCount - 1) * cardSpacing) / CGFloat(columnsCount)
+        let wideCardWidth = cardWidth * 2 + cardSpacing
+        
+        return VStack(spacing: cardSpacing) {
+            ForEach(arrangeCardsInRows(columnsCount: columnsCount), id: \.self) { row in
+                HStack(spacing: cardSpacing) {
+                    ForEach(row, id: \.id) { task in
+                        let size = cardSize(for: task)
+                        
+                        ModuleShortCardView(
+                            task: task,
+                            onToggle: {
+                                viewModel.toggleTaskCompletion(task)
+                            },
+                            onDelete: {
+                                viewModel.deleteTask(task)
+                            },
+                            isDeleting: viewModel.deletingTaskIds.contains(task.id)
+                        )
+                        .frame(width: size == .wide ? wideCardWidth : cardWidth)
+                        .transition(.asymmetric(
+                            insertion: .scale(scale: 0.8).combined(with: .opacity),
+                            removal: .scale(scale: 0.1).combined(with: .opacity)
+                        ))
+                    }
+                    
+                    Spacer()
+                }
+            }
+        }
+    }
+    
+    // Размещаем карточки в ряды с учетом широких карточек
+    private func arrangeCardsInRows(columnsCount: Int) -> [[ModuleShortCard]] {
+        var rows: [[ModuleShortCard]] = []
+        var currentRow: [ModuleShortCard] = []
+        var currentRowWidth = 0
+        
+        for task in viewModel.tasks {
+            let size = cardSize(for: task)
+            let cardWidth = size == .wide ? 2 : 1
+            
+            // Проверяем, помещается ли карточка в текущий ряд
+            if currentRowWidth + cardWidth <= columnsCount {
+                currentRow.append(task)
+                currentRowWidth += cardWidth
+            } else {
+                // Начинаем новый ряд
+                if !currentRow.isEmpty {
+                    rows.append(currentRow)
+                }
+                currentRow = [task]
+                currentRowWidth = cardWidth
+            }
+        }
+        
+        // Добавляем последний ряд, если он не пустой
+        if !currentRow.isEmpty {
+            rows.append(currentRow)
+        }
+        
+        return rows
+    }
+
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
@@ -112,30 +185,13 @@ struct ModuleView: View {
                     }
                     .padding(.horizontal, 40)
                 } else {
-                    // Сетка карточек
+                    // Кастомная сетка карточек
                     GeometryReader { geometry in
                         ScrollView {
-                            LazyVGrid(columns: adaptiveColumns(for: geometry), spacing: 16) {
-                                ForEach(viewModel.tasks) { task in
-                                    ModuleShortCardView(
-                                        task: task,
-                                        onToggle: {
-                                            viewModel.toggleTaskCompletion(task)
-                                        },
-                                        onDelete: {
-                                            viewModel.deleteTask(task)
-                                        },
-                                        isDeleting: viewModel.deletingTaskIds.contains(task.id)
-                                    )
-                                    .transition(.asymmetric(
-                                        insertion: .scale(scale: 0.8).combined(with: .opacity),
-                                        removal: .scale(scale: 0.1).combined(with: .opacity)
-                                    ))
-                                }
-                            }
-                            .padding(.horizontal, 20)
-                            .padding(.top, 20)
-                            .padding(.bottom, 100) // Отступ для кнопок
+                            customGridLayout(geometry: geometry)
+                                .padding(.horizontal, 20)
+                                .padding(.top, 20)
+                                .padding(.bottom, 100) // Отступ для кнопок
                         }
                         .animation(.spring(response: 0.6, dampingFraction: 0.8), value: viewModel.tasks.count)
                     }

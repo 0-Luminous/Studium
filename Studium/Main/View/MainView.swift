@@ -224,20 +224,6 @@ struct MainView: View {
     }
 }
 
-// Расширение для обработки нажатий
-extension View {
-    func onPressGesture(onPress: @escaping () -> Void, onRelease: @escaping () -> Void) -> some View {
-        simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in
-                    onPress()
-                }
-                .onEnded { _ in
-                    onRelease()
-                }
-        )
-    }
-}
 
 #Preview {
     MainView().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)

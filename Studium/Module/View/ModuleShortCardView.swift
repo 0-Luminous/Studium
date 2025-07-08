@@ -11,26 +11,37 @@ struct ModuleShortCardView: View {
 
     @State private var isPressed = false
     @State private var isFlipped = false
+    
+    // Определяем размер карточки на основе длины текста на каждой стороне отдельно
+    private var cardSize: CardSize {
+        let titleLength = task.title.count
+        let descriptionLength = task.description.count
+        
+        // Карточка считается широкой, если ЛЮБАЯ из сторон > 95 символов
+        return (titleLength > 95 || descriptionLength > 95) ? .wide : .regular
+    }
+    
+    private var cardHeight: CGFloat {
+        cardSize == .wide ? 120 : 120 // Высота одинаковая
+    }
 
     var body: some View {
         ZStack {
             // Front Side
             VStack(spacing: 8) {
-                // Spacer()
-
+                
                 Text(task.title)
-                    .font(.system(size: 13))
-                    .foregroundColor(.white)
+                    .font(.system(size: cardSize == .wide ? 14 : 13, weight: .semibold))
+                    .foregroundColor(.black)
                     .strikethrough(task.isCompleted)
-                    // .lineLimit(6)
                     .multilineTextAlignment(.center)
                     .opacity(task.isCompleted ? 0.7 : 1.0)
+                    .lineLimit(nil) // Разрешаем неограниченное количество строк
                 
-                // Spacer()
             }
-            .padding(16)
+            .padding(cardSize == .wide ? 20 : 16)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .frame(height: 120) // Фиксированная высота
+            .frame(height: cardHeight)
             .background(
                 RoundedRectangle(cornerRadius: 16)
                     .fill(
@@ -65,19 +76,17 @@ struct ModuleShortCardView: View {
 
             // Back Side
             VStack(spacing: 8) {
-                // Spacer()
-
-                Text(!task.description.isEmpty ? task.description : "Нет описания")
-                    .font(.system(size: 13))
-                    .foregroundColor(!task.description.isEmpty ? .white : .gray)
-                    // .lineLimit(4)
-                    .multilineTextAlignment(.center)
                 
-                // Spacer()
+                Text(!task.description.isEmpty ? task.description : "Нет описания")
+                    .font(.system(size: cardSize == .wide ? 14 : 13))
+                    .foregroundColor(!task.description.isEmpty ? .white : .gray)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(nil) // Разрешаем неограниченное количество строк
+                
             }
-            .padding(16)
+            .padding(cardSize == .wide ? 20 : 16)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .frame(height: 120) // Фиксированная высота
+            .frame(height: cardHeight)
             .background(
                 RoundedRectangle(cornerRadius: 16)
                     .fill(
@@ -153,6 +162,27 @@ struct ModuleShortCardView: View {
                     isPressed = false
                 }
             }
+        )
+    }
+}
+
+// MARK: - CardSize Enum
+enum CardSize {
+    case regular // До 95 символов включительно на любой стороне
+    case wide    // Больше 95 символов на любой стороне
+}
+
+// MARK: - Press Gesture Extension
+extension View {
+    func onPressGesture(onPress: @escaping () -> Void, onRelease: @escaping () -> Void) -> some View {
+        self.simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    onPress()
+                }
+                .onEnded { _ in
+                    onRelease()
+                }
         )
     }
 }

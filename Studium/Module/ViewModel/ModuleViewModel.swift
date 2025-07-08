@@ -175,7 +175,7 @@ enum CardType: String, CaseIterable {
 }
 
 // MARK: - ModuleShortCard Model
-struct ModuleShortCard: Identifiable {
+struct ModuleShortCard: Identifiable, Hashable {
     let id: UUID
     var title: String
     var description: String
@@ -194,5 +194,14 @@ struct ModuleShortCard: Identifiable {
         self.isBothSides = isBothSides
         self.moduleId = moduleId
         self.createdAt = createdAt
+    }
+    
+    // MARK: - Hashable Implementation
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+    
+    static func == (lhs: ModuleShortCard, rhs: ModuleShortCard) -> Bool {
+        return lhs.id == rhs.id
     }
 }

@@ -11,7 +11,8 @@ struct ShortCardView: View {
     @State private var content = ""
     @State private var isBothSides = true
     
-    private let maxCharacterLimit = 95
+    // Увеличиваем лимит для возможности создания широких карточек
+    private let maxCharacterLimit = 150
 
     var body: some View {
         NavigationView {
@@ -141,6 +142,38 @@ struct ShortCardView: View {
                     .font(.subheadline)
                     .fontWeight(.medium)
                     .foregroundColor(.white)
+            }
+            
+            // Индикатор размера карточки
+            if !title.isEmpty || !content.isEmpty {
+                HStack {
+                    Image(systemName: willBeWideCard ? "rectangle.split.2x1" : "rectangle")
+                        .foregroundColor(willBeWideCard ? .orange : .blue)
+                        .font(.system(size: 14, weight: .medium))
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(willBeWideCard ? "Широкая карточка" : "Обычная карточка")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(willBeWideCard ? .orange : .blue)
+                        
+                        Text(cardSizeReason)
+                            .font(.caption2)
+                            .foregroundColor(.gray)
+                    }
+                    
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.white.opacity(0.05))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(willBeWideCard ? Color.orange.opacity(0.3) : Color.blue.opacity(0.3), lineWidth: 1)
+                        )
+                )
             }
             
             HStack {
@@ -279,7 +312,26 @@ struct ShortCardView: View {
     
     // MARK: - Computed Properties
     private var isFormValid: Bool {
+        // Форма валидна, если поля не пустые и не превышают лимит
         !title.isEmpty && !content.isEmpty && 
         title.count <= maxCharacterLimit && content.count <= maxCharacterLimit
+    }
+    
+    // Проверяем размер карточки на основе каждой стороны отдельно
+    private var willBeWideCard: Bool {
+        title.count > 95 || content.count > 95
+    }
+    
+    // Определяем, какая сторона делает карточку широкой
+    private var cardSizeReason: String {
+        if title.count > 95 && content.count > 95 {
+            return "Обе стороны >95 символов"
+        } else if title.count > 95 {
+            return "Внешняя сторона >95 символов"
+        } else if content.count > 95 {
+            return "Внутренняя сторона >95 символов"
+        } else {
+            return "Обе стороны ≤95 символов"
+        }
     }
 }
