@@ -12,7 +12,7 @@ struct ShortCardView: View {
     @State private var isBothSides = true
     
     // Увеличиваем лимит для возможности создания широких карточек
-    private let maxCharacterLimit = 150
+    private let maxCharacterLimit = 160
 
     var body: some View {
         NavigationView {
@@ -183,7 +183,7 @@ struct ShortCardView: View {
                         .fontWeight(.medium)
                         .foregroundColor(.white)
                     
-                    Text("Карточка может появиться любой стороной в игре")
+                    Text("Карточка может появиться любой стороной")
                         .font(.caption)
                         .foregroundColor(.gray)
                 }

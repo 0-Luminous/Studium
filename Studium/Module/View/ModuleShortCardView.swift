@@ -18,7 +18,7 @@ struct ModuleShortCardView: View {
         let descriptionLength = task.description.count
         
         // Карточка считается широкой, если ЛЮБАЯ из сторон > 95 символов
-        return (titleLength > 95 || descriptionLength > 95) ? .wide : .regular
+        return (titleLength > 85 || descriptionLength > 85) ? .wide : .regular
     }
     
     private var cardHeight: CGFloat {
@@ -141,7 +141,7 @@ struct ModuleShortCardView: View {
                         onToggle()
                     }
                 }) {
-                    Label(task.isCompleted ? "Отметить как невыполненное" : "Отметить как выполненное", 
+                    Label(task.isCompleted ? "Выключить карточку" : "Включить карточку", 
                           systemImage: task.isCompleted ? "checkmark.circle" : "circle")
                 }
                 

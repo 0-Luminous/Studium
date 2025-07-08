@@ -27,7 +27,7 @@ struct ModuleView: View {
     private func cardSize(for task: ModuleShortCard) -> CardSize {
         let titleLength = task.title.count
         let descriptionLength = task.description.count
-        return (titleLength > 95 || descriptionLength > 95) ? .wide : .regular
+        return (titleLength > 85 || descriptionLength > 85) ? .wide : .regular
     }
     
     // Вычисляем количество колонок для обычных карточек
