@@ -2,6 +2,8 @@ import CoreData
 import SwiftUI
 
 class CoreDataService: ObservableObject {
+    static let shared = CoreDataService()
+    
     let persistentContainer: NSPersistentContainer
     
     init(persistentContainer: NSPersistentContainer = PersistenceController.shared.container) {
@@ -10,6 +12,17 @@ class CoreDataService: ObservableObject {
     
     var viewContext: NSManagedObjectContext {
         persistentContainer.viewContext
+    }
+    
+    var context: NSManagedObjectContext {
+        persistentContainer.viewContext
+    }
+    
+    /// Сохраняет контекст
+    func save() throws {
+        if viewContext.hasChanges {
+            try viewContext.save()
+        }
     }
     
     // MARK: - Folder Operations

@@ -45,11 +45,6 @@ struct MainItemView: View {
                             .font(.system(size: 36, weight: .medium))
                             .foregroundColor(.white)
                     }
-
-                    // Небольшая дата создания
-                    // Text(item.createdAt, style: .date)
-                    //     .font(.caption2)
-                    //     .foregroundColor(item.type == .folder ? .primary : .white.opacity(0.8))
                 }
             }
 
@@ -61,19 +56,41 @@ struct MainItemView: View {
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
         }
-        .contentShape(Rectangle())
+        .contentShape(.contextMenuPreview, RoundedRectangle(cornerRadius: 20))
+        // .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 20))
+        // .draggable(item.name) {
+        //     if item.type == .folder {
+        //         Image(systemName: "folder.fill")
+        //             .font(.system(size: 60, weight: .medium))
+        //             .foregroundStyle(item.gradient)
+        //             .frame(width: 80, height: 80)
+        //     } else {
+        //         RoundedRectangle(cornerRadius: 20)
+        //             .fill(item.gradient)
+        //             .frame(width: 80, height: 80)
+        //             .overlay {
+        //                 Image(systemName: item.type.iconName)
+        //                     .font(.system(size: 24, weight: .medium))
+        //                     .foregroundColor(.white)
+        //             }
+        //     }
+        // }
         .onTapGesture {
             onTap()
         }
-        .onLongPressGesture(minimumDuration: 0.5) {
-            // Haptic feedback
-            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-            impactFeedback.impactOccurred()
-
-            // Показать меню удаления
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                onDelete()
+        .contextMenu {
+            Button(action: {
+                // Haptic feedback при удалении
+                let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                impactFeedback.impactOccurred()
+                
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    onDelete()
+                }
+            }) {
+                Label("Удалить \(item.type.displayName)", systemImage: "trash")
             }
+            .foregroundColor(.red)
         }
         .onPressGesture(
             onPress: {
@@ -87,5 +104,20 @@ struct MainItemView: View {
                 }
             }
         )
+    }
+}
+
+// Добавляем AnyShape для объединения разных типов Shape
+struct AnyShape: Shape {
+    private let _path: (CGRect) -> Path
+    
+    init<S: Shape>(_ shape: S) {
+        _path = { rect in
+            shape.path(in: rect)
+        }
+    }
+    
+    func path(in rect: CGRect) -> Path {
+        _path(rect)
     }
 }

@@ -130,7 +130,7 @@ struct ModuleShortCardView: View {
                 .transition(.scale)
             }
         }
-        .contentShape(Rectangle())
+        .contentShape(.contextMenuPreview, RoundedRectangle(cornerRadius: 20))
         .onTapGesture {
             withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
                 isFlipped.toggle()

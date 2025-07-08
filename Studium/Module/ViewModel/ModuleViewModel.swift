@@ -9,10 +9,12 @@ class ModuleViewModel: ObservableObject {
     
     // MARK: - Properties
     let module: MainItem
+    private let cardRepository: CardRepository
     
     // MARK: - Initialization
-    init(module: MainItem) {
+    init(module: MainItem, cardRepository: CardRepository = CardRepository()) {
         self.module = module
+        self.cardRepository = cardRepository
         loadTasks()
     }
     
@@ -39,8 +41,13 @@ class ModuleViewModel: ObservableObject {
             moduleId: module.id
         )
         
-        withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
-            tasks.append(newTask)
+        do {
+            try cardRepository.saveCard(newTask)
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                tasks.append(newTask)
+            }
+        } catch {
+            print("Ошибка сохранения карточки: \(error)")
         }
     }
     
@@ -49,12 +56,26 @@ class ModuleViewModel: ObservableObject {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                 tasks[index].isCompleted.toggle()
             }
+            
+            // Сохраняем изменения в Core Data
+            do {
+                try cardRepository.saveCard(tasks[index])
+            } catch {
+                print("Ошибка обновления карточки: \(error)")
+                // Откатываем изменения в случае ошибки
+                tasks[index].isCompleted.toggle()
+            }
         }
     }
     
     func deleteTask(_ task: ModuleShortCard) {
-        withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
-            tasks.removeAll { $0.id == task.id }
+        do {
+            try cardRepository.deleteCard(with: task.id)
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                tasks.removeAll { $0.id == task.id }
+            }
+        } catch {
+            print("Ошибка удаления карточки: \(error)")
         }
     }
     
@@ -70,8 +91,17 @@ class ModuleViewModel: ObservableObject {
     
     // MARK: - Private Methods
     private func loadTasks() {
-        // Здесь будет загрузка задач из CoreData или другого хранилища
-        tasks = []
+        do {
+            tasks = try cardRepository.fetchCards(for: module.id)
+        } catch {
+            print("Ошибка загрузки карточек: \(error)")
+            tasks = []
+        }
+    }
+    
+    // MARK: - Public Methods
+    func refreshTasks() {
+        loadTasks()
     }
 }
 
@@ -131,12 +161,23 @@ enum CardType: String, CaseIterable {
 
 // MARK: - ModuleShortCard Model
 struct ModuleShortCard: Identifiable {
-    let id = UUID()
+    let id: UUID
     var title: String
     var description: String
     var isCompleted: Bool = false
     var cardType: CardType = .regular
     var isBothSides: Bool = true
     let moduleId: UUID
-    let createdAt: Date = Date()
+    let createdAt: Date
+    
+    init(id: UUID = UUID(), title: String, description: String, isCompleted: Bool = false, cardType: CardType = .regular, isBothSides: Bool = true, moduleId: UUID, createdAt: Date = Date()) {
+        self.id = id
+        self.title = title
+        self.description = description
+        self.isCompleted = isCompleted
+        self.cardType = cardType
+        self.isBothSides = isBothSides
+        self.moduleId = moduleId
+        self.createdAt = createdAt
+    }
 }

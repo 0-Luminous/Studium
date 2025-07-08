@@ -14,4 +14,14 @@
         <attribute name="name" optional="YES" attributeType="String"/>
         <attribute name="parentId" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
     </entity>
+    <entity name="Card" representedClassName="Card" syncable="YES" codeGenerationType="class">
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="title" optional="YES" attributeType="String"/>
+        <attribute name="content" optional="YES" attributeType="String"/>
+        <attribute name="cardType" optional="YES" attributeType="String"/>
+        <attribute name="isCompleted" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="isBothSides" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="moduleId" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+    </entity>
 </model>
