@@ -88,14 +88,15 @@ struct MainView: View {
                     ScrollView {
                         LazyVGrid(columns: gridColumns, spacing: 20) {
                             ForEach(viewModel.currentItems) { item in
-                                MainItemView(item: item) {
+                                MainItemView(
+                                    item: item,
+                                    isDeleting: viewModel.isItemDeleting(item)
+                                ) {
                                     // Действие при нажатии
                                     viewModel.handleItemTap(item)
                                 } onDelete: {
                                     // Действие при удалении
-                                    withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
-                                        viewModel.deleteItem(item)
-                                    }
+                                    viewModel.deleteItem(item)
                                 }
                             }
                         }

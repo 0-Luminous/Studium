@@ -8,14 +8,15 @@ struct MainItem: Identifiable {
     let gradient: LinearGradient
     let createdAt: Date
     let parentId: UUID? // Добавляем поддержку родительской папки
+    let cardCount: Int? // Количество карточек для модулей
 
     enum ItemType {
         case module
         case folder
 
-        var iconName: String {
+        func iconName(hasCards: Bool = false) -> String {
             switch self {
-            case .module: return "tray.fill"
+            case .module: return hasCards ? "tray.full.fill" : "tray.fill"
             case .folder: return "folder.fill"
             }
         }
@@ -31,13 +32,14 @@ struct MainItem: Identifiable {
     // MARK: - Initialization
     
     /// Стандартный инициализатор для создания MainItem напрямую
-    init(id: UUID = UUID(), name: String, type: ItemType, gradient: LinearGradient, createdAt: Date = Date(), parentId: UUID? = nil) {
+    init(id: UUID = UUID(), name: String, type: ItemType, gradient: LinearGradient, createdAt: Date = Date(), parentId: UUID? = nil, cardCount: Int? = nil) {
         self.id = id
         self.name = name
         self.type = type
         self.gradient = gradient
         self.createdAt = createdAt
         self.parentId = parentId
+        self.cardCount = cardCount
     }
     
     // MARK: - CoreData Integration
@@ -54,10 +56,11 @@ struct MainItem: Identifiable {
         )
         self.createdAt = folder.createdAt ?? Date()
         self.parentId = folder.value(forKey: "parentId") as? UUID
+        self.cardCount = nil // Папки не имеют карточек
     }
     
     /// Инициализатор из CoreData сущности Module
-    init(from module: Module) {
+    init(from module: Module, cardCount: Int = 0) {
         self.id = module.value(forKey: "id") as? UUID ?? UUID()
         self.name = module.name ?? ""
         self.type = .module
@@ -67,6 +70,7 @@ struct MainItem: Identifiable {
         )
         self.createdAt = module.createdAt ?? Date()
         self.parentId = module.value(forKey: "parentId") as? UUID
+        self.cardCount = cardCount
     }
     
     /// Создает градиент из строковых значений цветов

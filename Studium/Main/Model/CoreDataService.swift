@@ -141,27 +141,6 @@ class CoreDataService: ObservableObject {
     
     // MARK: - Combined Operations
     
-    /// Получает все элементы (папки и модули) для указанного родителя
-    func fetchAllItems(parentId: UUID? = nil) -> [MainItem] {
-        let folders = fetchFolders(parentId: parentId)
-        let modules = fetchModules(parentId: parentId)
-        
-        var items: [MainItem] = []
-        
-        // Преобразуем папки в MainItem
-        for folder in folders {
-            items.append(MainItem(from: folder))
-        }
-        
-        // Преобразуем модули в MainItem
-        for module in modules {
-            items.append(MainItem(from: module))
-        }
-        
-        // Сортируем по дате создания (новые сначала)
-        return items.sorted { $0.createdAt > $1.createdAt }
-    }
-    
     /// Получает все элементы из CoreData (без фильтрации по parentId)
     func fetchAllItemsFromDatabase() -> [MainItem] {
         // Создаем запросы без предикатов для получения всех элементов
@@ -183,10 +162,35 @@ class CoreDataService: ObservableObject {
             // Получаем все модули
             let modules = try viewContext.fetch(moduleRequest)
             for module in modules {
-                items.append(MainItem(from: module))
+                let moduleId = module.value(forKey: "id") as? UUID ?? UUID()
+                let cardCount = countCards(for: moduleId)
+                items.append(MainItem(from: module, cardCount: cardCount))
             }
         } catch {
             print("Error fetching all items: \(error)")
+        }
+        
+        // Сортируем по дате создания (новые сначала)
+        return items.sorted { $0.createdAt > $1.createdAt }
+    }
+    
+    /// Получает все элементы (папки и модули) для указанного родителя
+    func fetchAllItems(parentId: UUID? = nil) -> [MainItem] {
+        let folders = fetchFolders(parentId: parentId)
+        let modules = fetchModules(parentId: parentId)
+        
+        var items: [MainItem] = []
+        
+        // Преобразуем папки в MainItem
+        for folder in folders {
+            items.append(MainItem(from: folder))
+        }
+        
+        // Преобразуем модули в MainItem
+        for module in modules {
+            let moduleId = module.value(forKey: "id") as? UUID ?? UUID()
+            let cardCount = countCards(for: moduleId)
+            items.append(MainItem(from: module, cardCount: cardCount))
         }
         
         // Сортируем по дате создания (новые сначала)
@@ -223,6 +227,21 @@ class CoreDataService: ObservableObject {
             } catch {
                 print("Error finding module to delete: \(error)")
             }
+        }
+    }
+    
+    // MARK: - Card Operations
+    
+    /// Подсчитывает количество карточек в модуле
+    func countCards(for moduleId: UUID) -> Int {
+        let request: NSFetchRequest<Card> = Card.fetchRequest()
+        request.predicate = NSPredicate(format: "moduleId == %@", moduleId as CVarArg)
+        
+        do {
+            return try viewContext.count(for: request)
+        } catch {
+            print("Error counting cards for module: \(error)")
+            return 0
         }
     }
     

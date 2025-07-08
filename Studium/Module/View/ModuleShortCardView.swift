@@ -141,7 +141,7 @@ struct ModuleShortCardView: View {
                         onToggle()
                     }
                 }) {
-                    Label(task.isCompleted ? "Выключить карточку" : "Включить карточку", 
+                    Label(task.isCompleted ? "Включить карточку" : "Выключить карточку", 
                           systemImage: task.isCompleted ? "checkmark.circle" : "circle")
                 }
                 

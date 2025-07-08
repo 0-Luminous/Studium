@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MainItemView: View {
     let item: MainItem
+    let isDeleting: Bool
     let onTap: () -> Void
     let onDelete: () -> Void
 
@@ -23,7 +24,7 @@ struct MainItemView: View {
                             x: 0,
                             y: isPressed ? 2 : 6
                         )
-                        .scaleEffect(isPressed ? 0.95 : 1.0)
+                        .scaleEffect(isDeleting ? 0.1 : (isPressed ? 0.95 : 1.0))
                 } else {
                     // Для модулей оставляем RoundedRectangle
                     RoundedRectangle(cornerRadius: 20)
@@ -35,13 +36,13 @@ struct MainItemView: View {
                             x: 0,
                             y: isPressed ? 2 : 6
                         )
-                        .scaleEffect(isPressed ? 0.95 : 1.0)
+                        .scaleEffect(isDeleting ? 0.1 : (isPressed ? 0.95 : 1.0))
                 }
 
                 VStack(spacing: 8) {
                     if item.type != .folder {
                         // Показываем иконку только для не-папок
-                        Image(systemName: item.type.iconName)
+                        Image(systemName: item.type.iconName(hasCards: (item.cardCount ?? 0) > 0))
                             .font(.system(size: 36, weight: .medium))
                             .foregroundColor(.white)
                     }
@@ -56,44 +57,33 @@ struct MainItemView: View {
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
         }
+        .scaleEffect(isDeleting ? 0.1 : 1.0)
+        .opacity(isDeleting ? 0.0 : 1.0)
+        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isDeleting)
         .contentShape(.contextMenuPreview, RoundedRectangle(cornerRadius: 20))
-        // .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 20))
-        // .draggable(item.name) {
-        //     if item.type == .folder {
-        //         Image(systemName: "folder.fill")
-        //             .font(.system(size: 60, weight: .medium))
-        //             .foregroundStyle(item.gradient)
-        //             .frame(width: 80, height: 80)
-        //     } else {
-        //         RoundedRectangle(cornerRadius: 20)
-        //             .fill(item.gradient)
-        //             .frame(width: 80, height: 80)
-        //             .overlay {
-        //                 Image(systemName: item.type.iconName)
-        //                     .font(.system(size: 24, weight: .medium))
-        //                     .foregroundColor(.white)
-        //             }
-        //     }
-        // }
         .onTapGesture {
+            guard !isDeleting else { return }
             onTap()
         }
         .contextMenu {
-            Button(action: {
-                // Haptic feedback при удалении
-                let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-                impactFeedback.impactOccurred()
-                
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                    onDelete()
+            if !isDeleting {
+                Button(action: {
+                    // Haptic feedback при удалении
+                    let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                    impactFeedback.impactOccurred()
+                    
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                        onDelete()
+                    }
+                }) {
+                    Label("Удалить \(item.type.displayName)", systemImage: "trash")
                 }
-            }) {
-                Label("Удалить \(item.type.displayName)", systemImage: "trash")
+                .foregroundColor(.red)
             }
-            .foregroundColor(.red)
         }
         .onPressGesture(
             onPress: {
+                guard !isDeleting else { return }
                 withAnimation(.easeInOut(duration: 0.1)) {
                     isPressed = true
                 }

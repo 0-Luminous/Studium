@@ -12,6 +12,7 @@ class MainViewModel: ObservableObject {
     @Published var navigationPath: [MainItem] = [] // Путь навигации
     @Published var selectedModule: MainItem? = nil // Выбранный модуль для показа
     @Published var showingModuleView = false // Показывать ли ModuleView
+    @Published var deletingItems: Set<UUID> = [] // Удаляемые элементы
     
     // MARK: - CoreData Service
     private let coreDataService = CoreDataService()
@@ -131,13 +132,22 @@ class MainViewModel: ObservableObject {
         }
     }
     
-    /// Удаление элемента
+    /// Удаление элемента с анимацией уменьшения
     func deleteItem(_ item: MainItem) {
-        coreDataService.deleteItem(id: item.id, type: item.type)
+        // Добавляем элемент в состояние удаления
+        deletingItems.insert(item.id)
         
-        withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
-            refreshCurrentItems()
+        // Удаляем из CoreData с задержкой для анимации
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+            self.coreDataService.deleteItem(id: item.id, type: item.type)
+            self.deletingItems.remove(item.id)
+            self.refreshCurrentItems()
         }
+    }
+    
+    /// Проверяет, удаляется ли элемент
+    func isItemDeleting(_ item: MainItem) -> Bool {
+        return deletingItems.contains(item.id)
     }
     
     // MARK: - UI State Management
