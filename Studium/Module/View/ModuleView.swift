@@ -54,34 +54,31 @@ struct ModuleView: View {
         
         return VStack(spacing: cardSpacing) {
             ForEach(Array(arrangedCards.enumerated()), id: \.offset) { rowIndex, row in
-                // Пропускаем пустые ряды, которые заблокированы тестовыми карточками
-                if !row.isEmpty {
-                    HStack(alignment: .top, spacing: cardSpacing) {
-                        ForEach(row, id: \.id) { task in
-                            let size = cardSize(for: task)
-                            
-                            ModuleShortCardView(
-                                task: task,
-                                onToggle: {
-                                    viewModel.toggleTaskCompletion(task)
-                                },
-                                onDelete: {
-                                    viewModel.deleteTask(task)
-                                },
-                                isDeleting: viewModel.deletingTaskIds.contains(task.id)
-                            )
-                            .frame(
-                                width: size == .test ? wideCardWidth : (size == .wide ? wideCardWidth : cardWidth),
-                                height: size == .test ? testCardHeight : normalCardHeight
-                            )
-                            .transition(.asymmetric(
-                                insertion: .scale(scale: 0.8).combined(with: .opacity),
-                                removal: .scale(scale: 0.1).combined(with: .opacity)
-                            ))
-                        }
+                HStack(alignment: .top, spacing: cardSpacing) {
+                    ForEach(row, id: \.id) { task in
+                        let size = cardSize(for: task)
                         
-                        Spacer()
+                        ModuleShortCardView(
+                            task: task,
+                            onToggle: {
+                                viewModel.toggleTaskCompletion(task)
+                            },
+                            onDelete: {
+                                viewModel.deleteTask(task)
+                            },
+                            isDeleting: viewModel.deletingTaskIds.contains(task.id)
+                        )
+                        .frame(
+                            width: size == .test ? wideCardWidth : (size == .wide ? wideCardWidth : cardWidth),
+                            height: size == .test ? testCardHeight : normalCardHeight
+                        )
+                        .transition(.asymmetric(
+                            insertion: .scale(scale: 0.8).combined(with: .opacity),
+                            removal: .scale(scale: 0.1).combined(with: .opacity)
+                        ))
                     }
+                    
+                    Spacer()
                 }
             }
         }
@@ -91,7 +88,6 @@ struct ModuleView: View {
     private func arrangeCardsInRows(columnsCount: Int) -> [[ShortCardModel]] {
         var rows: [[ShortCardModel]] = []
         var rowWidths: [Int] = [] // Отслеживаем занятое пространство в каждом ряду
-        var blockedRows: Set<Int> = [] // Ряды, заблокированные тестовыми карточками
         
         for task in viewModel.tasks {
             let size = cardSize(for: task)
@@ -100,35 +96,10 @@ struct ModuleView: View {
             // Ищем подходящий ряд для размещения карточки
             var placed = false
             for (index, currentWidth) in rowWidths.enumerated() {
-                // Проверяем, что ряд не заблокирован и есть место
-                if !blockedRows.contains(index) && currentWidth + cardWidth <= columnsCount {
-                    // Для тестовых карточек проверяем, что следующий ряд тоже свободен
-                    if size == .test {
-                        let nextRowIndex = index + 1
-                        // Проверяем, что следующий ряд существует и не заблокирован
-                        if nextRowIndex < rowWidths.count && blockedRows.contains(nextRowIndex) {
-                            continue // Не можем разместить здесь
-                        }
-                        // Если следующий ряд не существует, он будет создан
-                    }
-                    
+                if currentWidth + cardWidth <= columnsCount {
                     // Найден подходящий ряд
                     rows[index].append(task)
                     rowWidths[index] += cardWidth
-                    
-                    // Если это тестовая карточка, блокируем следующий ряд
-                    if size == .test {
-                        let nextRowIndex = index + 1
-                        // Создаем следующий ряд, если его нет
-                        while rows.count <= nextRowIndex {
-                            rows.append([])
-                            rowWidths.append(0)
-                        }
-                        // Блокируем следующий ряд
-                        blockedRows.insert(nextRowIndex)
-                        rowWidths[nextRowIndex] = columnsCount // Полностью блокируем ряд
-                    }
-                    
                     placed = true
                     break
                 }
@@ -136,17 +107,8 @@ struct ModuleView: View {
             
             // Если не нашли подходящий ряд, создаем новый
             if !placed {
-                let newRowIndex = rows.count
                 rows.append([task])
                 rowWidths.append(cardWidth)
-                
-                // Если это тестовая карточка, блокируем следующий ряд
-                if size == .test {
-                    let nextRowIndex = newRowIndex + 1
-                    rows.append([]) // Создаем пустой следующий ряд
-                    rowWidths.append(columnsCount) // Полностью блокируем его
-                    blockedRows.insert(nextRowIndex)
-                }
             }
         }
         
