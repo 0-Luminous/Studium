@@ -216,7 +216,7 @@ struct ModuleView: View {
     
     // Вспомогательная функция для создания карточки
     private func createCardView(task: ShortCardModel, width: CGFloat, height: CGFloat) -> some View {
-        ModuleShortCardView(
+        CardView(
             task: task,
             onToggle: {
                 viewModel.toggleTaskCompletion(task)

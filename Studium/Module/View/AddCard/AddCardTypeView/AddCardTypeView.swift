@@ -146,7 +146,7 @@ struct AddCardTypeView: View {
         .sheet(isPresented: $isShowingCardEditor) {
             if let cardType = selectedCardType {
                 if cardType == .test {
-                    TestCardView { title, content, isBothSides in
+                    AddTestCardView { title, content, isBothSides in
                         onCreateCard(cardType, title, content, isBothSides)
                         dismiss()
                     }

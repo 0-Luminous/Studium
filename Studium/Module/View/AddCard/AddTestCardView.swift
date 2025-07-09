@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - TestCardView
 
-struct TestCardView: View {
+struct AddTestCardView: View {
     let onAdd: (String, String, Bool) -> Void
     @Environment(\.dismiss) private var dismiss
     
@@ -399,7 +399,7 @@ struct TestCardView: View {
 // MARK: - Preview
 
 #Preview {
-    TestCardView { question, content, isBothSides in
+    AddTestCardView { question, content, isBothSides in
         print("Created test: \(question)")
         print("Content: \(content)")
         print("Both sides: \(isBothSides)")
