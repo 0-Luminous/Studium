@@ -14,7 +14,7 @@ struct AddTestCardView: View {
     @State private var showExplanation = false
     @State private var explanation = ""
 
-    private let maxQuestionLimit = 200
+    private let maxQuestionLimit = 150
     private let maxAnswerLimit = 100
     private let maxExplanationLimit = 150
 

@@ -19,14 +19,38 @@ struct TestCardView: View {
             // Front Side - Тест
             VStack(spacing: 6) {
                 
-                // Вопрос
-                Text(task.title)
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(.white)
-                    .multilineTextAlignment(.leading)
-                    .lineLimit(nil)
-                    .frame(minHeight: 30)
-                    .padding(.bottom, 8)
+                // Вопрос с кнопкой пояснения
+                HStack(alignment: .top, spacing: 8) {
+                    Text(task.title)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.leading)
+                        .lineLimit(nil)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                    // Кнопка с лампочкой для показа пояснения
+                    if showExplanation && hasExplanation {
+                        Button(action: {
+                            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                                isFlipped.toggle()
+                            }
+                        }) {
+                            Image(systemName: "lightbulb")
+                                .font(.system(size: 20))
+                                .foregroundColor(.yellow)
+                        }
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(Color.black.opacity(0.5))
+                                .frame(width: 30, height: 30)
+                        )
+                        .padding(.top, 10)
+                        .padding(.trailing, 10)
+                        .transition(.opacity.combined(with: .scale))
+                    }
+                }
+                .frame(minHeight: 30)
+                .padding(.bottom, 8)
                 
                 // Варианты ответов
                 if !task.description.isEmpty {
@@ -41,7 +65,7 @@ struct TestCardView: View {
                                     if selectedAnswer == answer.text {
                                         Image(systemName: answer.isCorrect ? "checkmark.circle.fill" : "xmark.circle.fill")
                                             .font(.system(size: 12))
-                                            .foregroundColor(answer.isCorrect ? .green : .red)
+                                            .foregroundColor(answer.isCorrect ? .green : .black)
                                     } else {
                                         Circle()
                                             .stroke(Color.white.opacity(0.5), lineWidth: 1)
@@ -60,7 +84,7 @@ struct TestCardView: View {
                                     RoundedRectangle(cornerRadius: 6)
                                         .fill(
                                             selectedAnswer == answer.text
-                                                ? (answer.isCorrect ? Color.green.opacity(0.2) : Color.red.opacity(0.8))
+                                                ? (answer.isCorrect ? Color.green.opacity(0.2) : Color.coral)
                                                 : Color.black.opacity(0.5)
                                         )
                                 )
@@ -71,39 +95,9 @@ struct TestCardView: View {
                 }
                 
                 Spacer()
-                
-                // Кнопка с лампочкой для показа пояснения
-                if showExplanation && hasExplanation {
-                    Button(action: {
-                        withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
-                            isFlipped.toggle()
-                        }
-                    }) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "lightbulb")
-                                .font(.system(size: 14))
-                                .foregroundColor(.yellow)
-                            
-                            Text("Пояснение")
-                                .font(.caption2)
-                                .foregroundColor(.white.opacity(0.8))
-                        }
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 5)
-                        .background(
-                            RoundedRectangle(cornerRadius: 6)
-                                .fill(Color.black.opacity(0.5))
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 6)
-                                .stroke(Color.charcoal, lineWidth: 2)
-                        )
-                    }
-                    .transition(.opacity.combined(with: .scale))
-                }
             }
             .padding(.horizontal, 10)
-            .padding(.vertical, 20)
+            .padding(.top, 20)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(
                 RoundedRectangle(cornerRadius: 16)

@@ -402,52 +402,15 @@ struct ModuleView: View {
             VStack {
                 Spacer()
                 
-                HStack(spacing: 16) {
-                    Spacer()
-                    
-                    // Кнопка "Учить карточки"
-                    if !viewModel.tasks.isEmpty {
-                        Button(action: {
-                            viewModel.startStudyingCards()
-                        }) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "brain.head.profile")
-                                    .font(.headline)
-                                    .foregroundColor(.white)
-                                
-                                Text("Учить карточки")
-                                    .font(.headline)
-                                    .fontWeight(.semibold)
-                                    .foregroundColor(.white)
-                            }
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 16)
-                            .background(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .fill(Color.accentColor)
-                            )
-                        }
-                        .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                    }
-                    
-                    Spacer()
-                    
-                    // Кнопка добавления
-                    Button(action: {
+                DockBar(
+                    hasCards: !viewModel.tasks.isEmpty,
+                    onStudyCards: {
+                        viewModel.startStudyingCards()
+                    },
+                    onAddCard: {
                         viewModel.showAddCardType()
-                    }) {
-                        Image(systemName: "plus")
-                            .font(.title2)
-                            .foregroundColor(.white)
-                            .frame(width: 56, height: 56)
-                            .background(Color.gray.opacity(0.8))
-                            .clipShape(Circle())
                     }
-                    .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
-                }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 20)
+                )
             }
         }
         .sheet(isPresented: $viewModel.showingAddCardType) {
@@ -474,6 +437,7 @@ struct ModuleView: View {
         .navigationBarHidden(true)
     }
 }
+
 
 #Preview {
     let sampleModule = MainItem(
