@@ -54,40 +54,149 @@ struct ModuleView: View {
         
         return VStack(spacing: cardSpacing) {
             ForEach(Array(arrangedCards.enumerated()), id: \.offset) { rowIndex, row in
-                HStack(alignment: .top, spacing: cardSpacing) {
-                    ForEach(row, id: \.id) { task in
-                        let size = cardSize(for: task)
-                        
-                        ModuleShortCardView(
-                            task: task,
-                            onToggle: {
-                                viewModel.toggleTaskCompletion(task)
-                            },
-                            onDelete: {
-                                viewModel.deleteTask(task)
-                            },
-                            isDeleting: viewModel.deletingTaskIds.contains(task.id)
-                        )
-                        .frame(
-                            width: size == .test ? wideCardWidth : (size == .wide ? wideCardWidth : cardWidth),
-                            height: size == .test ? testCardHeight : normalCardHeight
-                        )
-                        .transition(.asymmetric(
-                            insertion: .scale(scale: 0.8).combined(with: .opacity),
-                            removal: .scale(scale: 0.1).combined(with: .opacity)
-                        ))
+                createRowView(
+                    row: row,
+                    cardWidth: cardWidth,
+                    wideCardWidth: wideCardWidth,
+                    normalCardHeight: normalCardHeight,
+                    testCardHeight: testCardHeight,
+                    columnsCount: columnsCount
+                )
+            }
+        }
+    }
+    
+    // Создаем представление для ряда с учетом тестовых карточек
+    private func createRowView(
+        row: [ShortCardModel],
+        cardWidth: CGFloat,
+        wideCardWidth: CGFloat,
+        normalCardHeight: CGFloat,
+        testCardHeight: CGFloat,
+        columnsCount: Int
+    ) -> some View {
+        let hasTestCard = row.contains { cardSize(for: $0) == .test }
+        let testCard = row.first { cardSize(for: $0) == .test }
+        let regularCards = row.filter { cardSize(for: $0) != .test }
+        
+        return HStack(alignment: .top, spacing: cardSpacing) {
+            // Если есть тестовая карточка, размещаем её первой
+            if let testCard = testCard {
+                createCardView(
+                    task: testCard,
+                    width: wideCardWidth,
+                    height: testCardHeight
+                )
+                
+                // Размещаем обычные карточки в VStack рядом с тестовой
+                if !regularCards.isEmpty {
+                    let availableColumns = columnsCount - 2 // Тестовая карточка занимает 2 колонки
+                    createRegularCardsStack(
+                        cards: regularCards,
+                        cardWidth: cardWidth,
+                        normalCardHeight: normalCardHeight,
+                        availableColumns: availableColumns
+                    )
+                }
+            } else {
+                // Обычное размещение без тестовых карточек
+                ForEach(row, id: \.id) { task in
+                    let size = cardSize(for: task)
+                    createCardView(
+                        task: task,
+                        width: size == .wide ? wideCardWidth : cardWidth,
+                        height: normalCardHeight
+                    )
+                }
+            }
+            
+            Spacer()
+        }
+    }
+    
+    // Создаем VStack для обычных карточек рядом с тестовой
+    private func createRegularCardsStack(
+        cards: [ShortCardModel],
+        cardWidth: CGFloat,
+        normalCardHeight: CGFloat,
+        availableColumns: Int
+    ) -> some View {
+        let testCardHeight = normalCardHeight * 2 + cardSpacing
+        let cardsPerLevel = availableColumns // Количество карточек в каждом уровне
+        let maxCards = cardsPerLevel * 2 // Максимальное количество карточек (2 уровня)
+        
+        return VStack(alignment: .leading, spacing: cardSpacing) {
+            // Верхний ряд обычных карточек
+            HStack(spacing: cardSpacing) {
+                ForEach(Array(cards.prefix(cardsPerLevel)), id: \.id) { task in
+                    createCardView(
+                        task: task,
+                        width: cardWidth,
+                        height: normalCardHeight
+                    )
+                }
+                
+                // Добавляем пустое пространство если карточек меньше чем cardsPerLevel
+                let topLevelCards = min(cards.count, cardsPerLevel)
+                if topLevelCards < cardsPerLevel {
+                    ForEach(0..<(cardsPerLevel - topLevelCards), id: \.self) { _ in
+                        Rectangle()
+                            .fill(Color.clear)
+                            .frame(width: cardWidth, height: normalCardHeight)
                     }
-                    
-                    Spacer()
+                }
+            }
+            
+            // Нижний ряд обычных карточек
+            HStack(spacing: cardSpacing) {
+                if cards.count > cardsPerLevel {
+                    ForEach(Array(cards.dropFirst(cardsPerLevel).prefix(cardsPerLevel)), id: \.id) { task in
+                        createCardView(
+                            task: task,
+                            width: cardWidth,
+                            height: normalCardHeight
+                        )
+                    }
+                }
+                
+                // Добавляем пустое пространство если карточек меньше чем максимум
+                let bottomLevelCards = max(0, cards.count - cardsPerLevel)
+                if bottomLevelCards < cardsPerLevel {
+                    ForEach(0..<(cardsPerLevel - bottomLevelCards), id: \.self) { _ in
+                        Rectangle()
+                            .fill(Color.clear)
+                            .frame(width: cardWidth, height: normalCardHeight)
+                    }
                 }
             }
         }
+        .frame(height: testCardHeight) // Принудительно задаем высоту равную тестовой карточке
+    }
+    
+    // Вспомогательная функция для создания карточки
+    private func createCardView(task: ShortCardModel, width: CGFloat, height: CGFloat) -> some View {
+        ModuleShortCardView(
+            task: task,
+            onToggle: {
+                viewModel.toggleTaskCompletion(task)
+            },
+            onDelete: {
+                viewModel.deleteTask(task)
+            },
+            isDeleting: viewModel.deletingTaskIds.contains(task.id)
+        )
+        .frame(width: width, height: height)
+        .transition(.asymmetric(
+            insertion: .scale(scale: 0.8).combined(with: .opacity),
+            removal: .scale(scale: 0.1).combined(with: .opacity)
+        ))
     }
     
     // Размещаем карточки в ряды с учетом широких карточек и тестовых карточек
     private func arrangeCardsInRows(columnsCount: Int) -> [[ShortCardModel]] {
         var rows: [[ShortCardModel]] = []
         var rowWidths: [Int] = [] // Отслеживаем занятое пространство в каждом ряду
+        var rowHasTestCard: [Bool] = [] // Отслеживаем, есть ли тестовая карточка в ряду
         
         for task in viewModel.tasks {
             let size = cardSize(for: task)
@@ -96,12 +205,43 @@ struct ModuleView: View {
             // Ищем подходящий ряд для размещения карточки
             var placed = false
             for (index, currentWidth) in rowWidths.enumerated() {
-                if currentWidth + cardWidth <= columnsCount {
-                    // Найден подходящий ряд
-                    rows[index].append(task)
-                    rowWidths[index] += cardWidth
-                    placed = true
-                    break
+                let canFit = currentWidth + cardWidth <= columnsCount
+                
+                // Особая логика для тестовых карточек
+                if size == .test {
+                    // Тестовая карточка помещается только если есть место для 2 колонок
+                    if canFit && !rowHasTestCard[index] {
+                        rows[index].append(task)
+                        rowWidths[index] += cardWidth
+                        rowHasTestCard[index] = true
+                        placed = true
+                        break
+                    }
+                } else {
+                    // Обычные карточки
+                    if canFit {
+                        // Если в ряду уже есть тестовая карточка, можем добавить больше обычных карточек
+                        // так как они будут размещены в VStack рядом с тестовой
+                        if rowHasTestCard[index] {
+                            let regularCardsInRow = rows[index].filter { cardSize(for: $0) != .test }.count
+                            let availableColumns = columnsCount - 2 // Тестовая карточка занимает 2 колонки
+                            let maxRegularCards = availableColumns * 2 // 2 уровня по availableColumns карточек
+                            
+                            // Можем разместить до (availableColumns * 2) обычных карточек
+                            // Но учитываем только обычные карточки (не широкие)
+                            if regularCardsInRow < maxRegularCards && cardWidth == 1 {
+                                rows[index].append(task)
+                                placed = true
+                                break
+                            }
+                        } else {
+                            // Обычное размещение без тестовых карточек
+                            rows[index].append(task)
+                            rowWidths[index] += cardWidth
+                            placed = true
+                            break
+                        }
+                    }
                 }
             }
             
@@ -109,6 +249,7 @@ struct ModuleView: View {
             if !placed {
                 rows.append([task])
                 rowWidths.append(cardWidth)
+                rowHasTestCard.append(size == .test)
             }
         }
         
