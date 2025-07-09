@@ -6,6 +6,7 @@ struct CardView: View {
     let task: ShortCardModel
     let onToggle: () -> Void
     let onDelete: () -> Void
+    let onEdit: () -> Void
     let isDeleting: Bool
     
     var body: some View {
@@ -14,6 +15,7 @@ struct CardView: View {
                 task: task,
                 onToggle: onToggle,
                 onDelete: onDelete,
+                onEdit: onEdit,
                 isDeleting: isDeleting
             )
         } else {
@@ -21,6 +23,7 @@ struct CardView: View {
                 task: task,
                 onToggle: onToggle,
                 onDelete: onDelete,
+                onEdit: onEdit,
                 isDeleting: isDeleting
             )
         }

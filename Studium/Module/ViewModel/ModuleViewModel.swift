@@ -7,6 +7,8 @@ class ModuleViewModel: ObservableObject {
     @Published var showingAddCardType = false // Убираем showingAddOptions
     @Published var showingStudyCards = false // Для отображения режима изучения
     @Published var deletingTaskIds: Set<UUID> = [] // Карточки в процессе удаления
+    @Published var showingEditCardType = false // Для редактирования карточки
+    @Published var editingCard: ShortCardModel? = nil // Карточка для редактирования
     
     // MARK: - Properties
     let module: MainItem
@@ -49,6 +51,25 @@ class ModuleViewModel: ObservableObject {
             }
         } catch {
             print("Ошибка сохранения карточки: \(error)")
+        }
+    }
+    
+    func editCard(cardId: UUID, type: CardType, title: String, content: String, isBothSides: Bool) {
+        guard !title.isEmpty, let index = tasks.firstIndex(where: { $0.id == cardId }) else { return }
+        
+        var updatedTask = tasks[index]
+        updatedTask.title = title
+        updatedTask.description = content
+        updatedTask.cardType = type
+        updatedTask.isBothSides = isBothSides
+        
+        do {
+            try cardRepository.saveCard(updatedTask)
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                tasks[index] = updatedTask
+            }
+        } catch {
+            print("Ошибка обновления карточки: \(error)")
         }
     }
     
@@ -102,6 +123,11 @@ class ModuleViewModel: ObservableObject {
     // MARK: - UI State Management
     func showAddCardType() {
         showingAddCardType = true
+    }
+    
+    func showEditCard(_ card: ShortCardModel) {
+        editingCard = card
+        showingEditCardType = true
     }
     
     // MARK: - Private Methods

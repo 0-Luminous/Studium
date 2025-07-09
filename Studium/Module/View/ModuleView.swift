@@ -224,6 +224,9 @@ struct ModuleView: View {
             onDelete: {
                 viewModel.deleteTask(task)
             },
+            onEdit: {
+                viewModel.showEditCard(task)
+            },
             isDeleting: viewModel.deletingTaskIds.contains(task.id)
         )
         .frame(width: width, height: height)
@@ -450,6 +453,19 @@ struct ModuleView: View {
         .sheet(isPresented: $viewModel.showingAddCardType) {
             AddCardTypeView { cardType, title, content, isBothSides in
                 viewModel.addCard(type: cardType, title: title, content: content, isBothSides: isBothSides)
+            }
+        }
+        .sheet(isPresented: $viewModel.showingEditCardType) {
+            if let editingCard = viewModel.editingCard {
+                if editingCard.cardType == .test {
+                    EditTestCardView(card: editingCard) { title, content, isBothSides in
+                        viewModel.editCard(cardId: editingCard.id, type: editingCard.cardType, title: title, content: content, isBothSides: isBothSides)
+                    }
+                } else {
+                    EditShortCardView(card: editingCard) { title, content, isBothSides in
+                        viewModel.editCard(cardId: editingCard.id, type: editingCard.cardType, title: title, content: content, isBothSides: isBothSides)
+                    }
+                }
             }
         }
         .sheet(isPresented: $viewModel.showingStudyCards) {

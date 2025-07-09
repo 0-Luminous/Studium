@@ -6,6 +6,7 @@ struct TestCardView: View {
     let task: ShortCardModel
     let onToggle: () -> Void
     let onDelete: () -> Void
+    let onEdit: () -> Void
     let isDeleting: Bool
 
     @State private var isPressed = false
@@ -16,30 +17,26 @@ struct TestCardView: View {
     var body: some View {
         ZStack {
             // Front Side - Тест
-            VStack(spacing: 12) {
-                // Заголовок
-                Text("Тест")
-                    .font(.caption)
-                    .fontWeight(.medium)
-                    .foregroundColor(.white.opacity(0.7))
-                    .textCase(.uppercase)
+            VStack(spacing: 6) {
                 
                 // Вопрос
                 Text(task.title)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(.white)
-                    .multilineTextAlignment(.center)
+                    .multilineTextAlignment(.leading)
                     .lineLimit(nil)
+                    .frame(minHeight: 30)
+                    .padding(.bottom, 8)
                 
                 // Варианты ответов
                 if !task.description.isEmpty {
-                    VStack(spacing: 6) {
+                    VStack(spacing: 10) {
                         ForEach(parseTestAnswers(task.description), id: \.self) { answer in
                             Button(action: {
                                 selectedAnswer = answer.text
                                 showExplanation = true
                             }) {
-                                HStack(spacing: 8) {
+                                HStack(spacing: 10) {
                                     // Показываем результат только если ответ выбран
                                     if selectedAnswer == answer.text {
                                         Image(systemName: answer.isCorrect ? "checkmark.circle.fill" : "xmark.circle.fill")
@@ -58,13 +55,13 @@ struct TestCardView: View {
                                         .frame(maxWidth: .infinity, alignment: .leading)
                                 }
                                 .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
+                                .padding(.vertical, 8)
                                 .background(
                                     RoundedRectangle(cornerRadius: 6)
                                         .fill(
                                             selectedAnswer == answer.text
-                                                ? (answer.isCorrect ? Color.green.opacity(0.2) : Color.red.opacity(0.2))
-                                                : Color.white.opacity(0.1)
+                                                ? (answer.isCorrect ? Color.green.opacity(0.2) : Color.red.opacity(0.8))
+                                                : Color.black.opacity(0.5)
                                         )
                                 )
                             }
@@ -91,27 +88,22 @@ struct TestCardView: View {
                                 .font(.caption2)
                                 .foregroundColor(.white.opacity(0.8))
                         }
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 5)
                         .background(
                             RoundedRectangle(cornerRadius: 6)
-                                .fill(Color.yellow.opacity(0.2))
+                                .fill(Color.black.opacity(0.5))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6)
+                                .stroke(Color.charcoal, lineWidth: 2)
                         )
                     }
                     .transition(.opacity.combined(with: .scale))
-                } else if selectedAnswer == nil {
-                    VStack(spacing: 4) {
-                        Image(systemName: "hand.tap")
-                            .font(.system(size: 14))
-                            .foregroundColor(.white.opacity(0.5))
-                        
-                        Text("Выберите ответ")
-                            .font(.caption2)
-                            .foregroundColor(.white.opacity(0.6))
-                    }
                 }
             }
-            .padding(20)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 20)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(
                 RoundedRectangle(cornerRadius: 16)
@@ -248,6 +240,10 @@ struct TestCardView: View {
                 }) {
                     Label(task.isCompleted ? "Включить карточку" : "Выключить карточку", 
                           systemImage: task.isCompleted ? "checkmark.circle" : "circle")
+                }
+                
+                Button(action: onEdit) {
+                    Label("Редактировать", systemImage: "pencil")
                 }
                 
                 Button(role: .destructive, action: onDelete) {

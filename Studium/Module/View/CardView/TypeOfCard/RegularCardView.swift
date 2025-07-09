@@ -6,6 +6,7 @@ struct RegularCardView: View {
     let task: ShortCardModel
     let onToggle: () -> Void
     let onDelete: () -> Void
+    let onEdit: () -> Void
     let isDeleting: Bool
 
     @State private var isPressed = false
@@ -130,6 +131,10 @@ struct RegularCardView: View {
                 }) {
                     Label(task.isCompleted ? "Включить карточку" : "Выключить карточку", 
                           systemImage: task.isCompleted ? "checkmark.circle" : "circle")
+                }
+                
+                Button(action: onEdit) {
+                    Label("Редактировать", systemImage: "pencil")
                 }
                 
                 Button(role: .destructive, action: onDelete) {
