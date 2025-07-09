@@ -77,7 +77,7 @@ struct ModuleView: View {
     ) -> some View {
         let hasTestCard = row.contains { cardSize(for: $0) == .test }
         let testCard = row.first { cardSize(for: $0) == .test }
-        let regularCards = row.filter { cardSize(for: $0) != .test }
+        let regularCards = row.filter { cardSize(for: $0) != .test } // Включает обычные и широкие карточки
         
         return HStack(alignment: .top, spacing: cardSpacing) {
             // Если есть тестовая карточка, размещаем её первой
@@ -122,55 +122,96 @@ struct ModuleView: View {
         availableColumns: Int
     ) -> some View {
         let testCardHeight = normalCardHeight * 2 + cardSpacing
-        let cardsPerLevel = availableColumns // Количество карточек в каждом уровне
-        let maxCards = cardsPerLevel * 2 // Максимальное количество карточек (2 уровня)
+        let wideCardWidth = cardWidth * 2 + cardSpacing
+        
+        // Размещаем карточки в два уровня с учетом широких карточек
+        let levelArrangements = arrangeCardsInLevels(cards: cards, availableColumns: availableColumns)
         
         return VStack(alignment: .leading, spacing: cardSpacing) {
-            // Верхний ряд обычных карточек
-            HStack(spacing: cardSpacing) {
-                ForEach(Array(cards.prefix(cardsPerLevel)), id: \.id) { task in
-                    createCardView(
-                        task: task,
-                        width: cardWidth,
-                        height: normalCardHeight
-                    )
-                }
-                
-                // Добавляем пустое пространство если карточек меньше чем cardsPerLevel
-                let topLevelCards = min(cards.count, cardsPerLevel)
-                if topLevelCards < cardsPerLevel {
-                    ForEach(0..<(cardsPerLevel - topLevelCards), id: \.self) { _ in
-                        Rectangle()
-                            .fill(Color.clear)
-                            .frame(width: cardWidth, height: normalCardHeight)
-                    }
-                }
+            // Верхний уровень
+            createLevelView(
+                cards: levelArrangements.topLevel,
+                cardWidth: cardWidth,
+                wideCardWidth: wideCardWidth,
+                normalCardHeight: normalCardHeight,
+                availableColumns: availableColumns
+            )
+            
+            // Нижний уровень
+            createLevelView(
+                cards: levelArrangements.bottomLevel,
+                cardWidth: cardWidth,
+                wideCardWidth: wideCardWidth,
+                normalCardHeight: normalCardHeight,
+                availableColumns: availableColumns
+            )
+        }
+        .frame(height: testCardHeight) // Принудительно задаем высоту равную тестовой карточке
+    }
+    
+    // Размещаем карточки по уровням с учетом широких карточек
+    private func arrangeCardsInLevels(cards: [ShortCardModel], availableColumns: Int) -> (topLevel: [ShortCardModel], bottomLevel: [ShortCardModel]) {
+        var topLevel: [ShortCardModel] = []
+        var bottomLevel: [ShortCardModel] = []
+        var topLevelWidth = 0
+        var bottomLevelWidth = 0
+        
+        for card in cards {
+            let size = cardSize(for: card)
+            let cardWidth = size == .wide ? 2 : 1
+            
+            // Пытаемся разместить в верхнем уровне
+            if topLevelWidth + cardWidth <= availableColumns {
+                topLevel.append(card)
+                topLevelWidth += cardWidth
+            }
+            // Если не помещается в верхний, пытаемся в нижний
+            else if bottomLevelWidth + cardWidth <= availableColumns {
+                bottomLevel.append(card)
+                bottomLevelWidth += cardWidth
+            }
+            // Если не помещается ни в один уровень, прерываем (карточка не будет размещена)
+            else {
+                break
+            }
+        }
+        
+        return (topLevel, bottomLevel)
+    }
+    
+    // Создаем представление для одного уровня с поддержкой широких карточек
+    private func createLevelView(
+        cards: [ShortCardModel],
+        cardWidth: CGFloat,
+        wideCardWidth: CGFloat,
+        normalCardHeight: CGFloat,
+        availableColumns: Int
+    ) -> some View {
+        HStack(spacing: cardSpacing) {
+            ForEach(cards, id: \.id) { task in
+                let size = cardSize(for: task)
+                createCardView(
+                    task: task,
+                    width: size == .wide ? wideCardWidth : cardWidth,
+                    height: normalCardHeight
+                )
             }
             
-            // Нижний ряд обычных карточек
-            HStack(spacing: cardSpacing) {
-                if cards.count > cardsPerLevel {
-                    ForEach(Array(cards.dropFirst(cardsPerLevel).prefix(cardsPerLevel)), id: \.id) { task in
-                        createCardView(
-                            task: task,
-                            width: cardWidth,
-                            height: normalCardHeight
-                        )
-                    }
-                }
-                
-                // Добавляем пустое пространство если карточек меньше чем максимум
-                let bottomLevelCards = max(0, cards.count - cardsPerLevel)
-                if bottomLevelCards < cardsPerLevel {
-                    ForEach(0..<(cardsPerLevel - bottomLevelCards), id: \.self) { _ in
-                        Rectangle()
-                            .fill(Color.clear)
-                            .frame(width: cardWidth, height: normalCardHeight)
-                    }
+            // Добавляем пустое пространство для выравнивания
+            let usedWidth = cards.reduce(0) { total, card in
+                let size = cardSize(for: card)
+                return total + (size == .wide ? 2 : 1)
+            }
+            
+            if usedWidth < availableColumns {
+                let remainingWidth = availableColumns - usedWidth
+                ForEach(0..<remainingWidth, id: \.self) { _ in
+                    Rectangle()
+                        .fill(Color.clear)
+                        .frame(width: cardWidth, height: normalCardHeight)
                 }
             }
         }
-        .frame(height: testCardHeight) // Принудительно задаем высоту равную тестовой карточке
     }
     
     // Вспомогательная функция для создания карточки
@@ -220,16 +261,19 @@ struct ModuleView: View {
                 } else {
                     // Обычные карточки
                     if canFit {
-                        // Если в ряду уже есть тестовая карточка, можем добавить больше обычных карточек
+                        // Если в ряду уже есть тестовая карточка, можем добавить больше карточек
                         // так как они будут размещены в VStack рядом с тестовой
                         if rowHasTestCard[index] {
-                            let regularCardsInRow = rows[index].filter { cardSize(for: $0) != .test }.count
+                            let regularCards = rows[index].filter { cardSize(for: $0) != .test }
                             let availableColumns = columnsCount - 2 // Тестовая карточка занимает 2 колонки
-                            let maxRegularCards = availableColumns * 2 // 2 уровня по availableColumns карточек
                             
-                            // Можем разместить до (availableColumns * 2) обычных карточек
-                            // Но учитываем только обычные карточки (не широкие)
-                            if regularCardsInRow < maxRegularCards && cardWidth == 1 {
+                            // Проверяем, поместится ли новая карточка в двухуровневую структуру
+                            let testCards = regularCards + [task]
+                            let levelArrangements = arrangeCardsInLevels(cards: testCards, availableColumns: availableColumns)
+                            let totalArrangedCards = levelArrangements.topLevel.count + levelArrangements.bottomLevel.count
+                            
+                            // Если все карточки помещаются в два уровня, добавляем
+                            if totalArrangedCards == testCards.count {
                                 rows[index].append(task)
                                 placed = true
                                 break
