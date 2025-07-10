@@ -92,7 +92,7 @@ struct CoverFlowView: View {
     
     // MARK: - Main Card View
     private func mainCardView(task: ShortCardModel, width: CGFloat, height: CGFloat) -> some View {
-        let rotationAngle = cardOffset.width / 10
+        let rotationAngle = -cardOffset.width / 10  // Инвертируем знак
         let scale = 1.0 - abs(cardOffset.width) / 1000
         
         return ZStack {
