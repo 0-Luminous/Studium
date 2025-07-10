@@ -556,9 +556,6 @@ struct CoverFlowView: View {
             targetCardIndex = currentCardIndex - 1
         }
         
-        // Сбрасываем offset текущей карточки перед новой анимацией
-        cardOffset = .zero
-        
         // Устанавливаем следующую карточку в начальную позицию
         nextCardIndex = targetCardIndex
         nextCardOffset = CGSize(width: enterOffset, height: 0)
