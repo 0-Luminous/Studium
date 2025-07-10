@@ -46,10 +46,17 @@ struct CoverFlowView: View {
                             stackIndex: cardIndex
                         )
                         .zIndex(-zOffset)
+                        .transition(.opacity.combined(with: .scale(scale: 0.8)))
+                        .animation(.easeInOut(duration: 0.25), value: currentCardIndex)
                         .onTapGesture {
                             if currentCardIndex > 0 {
-                                performCoverFlowTransition(direction: .right) {
-                                    previousCard()
+                                let defaultSpeed = AnimationSpeed(
+                                    transitionAnimation: .spring(response: 0.6, dampingFraction: 0.85),
+                                    returnAnimation: .spring(response: 0.6, dampingFraction: 0.85),
+                                    delayDuration: 0.6
+                                )
+                                performCoverFlowTransition(direction: .right, animationSpeed: defaultSpeed) {
+                                    previousCard(animationSpeed: defaultSpeed)
                                 }
                             }
                         }
@@ -70,10 +77,17 @@ struct CoverFlowView: View {
                             stackIndex: cardIndex
                         )
                         .zIndex(-zOffset)
+                        .transition(.opacity.combined(with: .scale(scale: 0.8)))
+                        .animation(.easeInOut(duration: 0.25), value: currentCardIndex)
                         .onTapGesture {
                             if currentCardIndex < tasks.count - 1 {
-                                performCoverFlowTransition(direction: .left) {
-                                    nextCard()
+                                let defaultSpeed = AnimationSpeed(
+                                    transitionAnimation: .spring(response: 0.6, dampingFraction: 0.85),
+                                    returnAnimation: .spring(response: 0.6, dampingFraction: 0.85),
+                                    delayDuration: 0.6
+                                )
+                                performCoverFlowTransition(direction: .left, animationSpeed: defaultSpeed) {
+                                    nextCard(animationSpeed: defaultSpeed)
                                 }
                             }
                         }
@@ -333,14 +347,14 @@ struct CoverFlowView: View {
             axis: (x: 0, y: 1, z: 0)
         )
         .opacity(isTransitioning ? 0.0 : 1.0)
-        .animation(.spring(response: 0.6, dampingFraction: 0.8), value: isFlipped)
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isDragging)
-        .animation(.spring(response: 0.5, dampingFraction: 0.8), value: isTransitioning)
+        .animation(.spring(response: 0.8, dampingFraction: 0.9), value: isFlipped)
+        .animation(.interpolatingSpring(stiffness: 300, damping: 30), value: isDragging)
+        .animation(.spring(response: 0.7, dampingFraction: 0.85), value: isTransitioning)
         .contentShape(Rectangle())
         .onTapGesture {
             // Проверяем, что не происходит драг
             if !isDragging {
-                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                withAnimation(.spring(response: 0.8, dampingFraction: 0.9)) {
                     isFlipped.toggle()
                 }
             }
@@ -348,42 +362,48 @@ struct CoverFlowView: View {
         .gesture(
             DragGesture()
                 .onChanged { value in
-                    isDragging = true
-                    cardOffset = value.translation
+                    withAnimation(.interpolatingSpring(stiffness: 400, damping: 40)) {
+                        isDragging = true
+                        cardOffset = value.translation
+                    }
                 }
                 .onEnded { value in
                     isDragging = false
                     
-                    let swipeThreshold: CGFloat = 50  // Уменьшаем порог для более чувствительного свайпа
+                    let swipeThreshold: CGFloat = 50
                     let velocity = value.velocity.width
+                    let absVelocity = abs(velocity)
+                    
+                    // Адаптивная анимация в зависимости от скорости
+                    let animationSpeed = getAdaptiveAnimationSpeed(velocity: absVelocity)
                     
                     if value.translation.width > swipeThreshold || velocity > 300 {
                         // Свайп вправо - предыдущая карточка
                         if currentCardIndex > 0 {
-                            performCoverFlowTransition(direction: .right) {
-                                previousCard()
+                            performCoverFlowTransition(direction: .right, animationSpeed: animationSpeed) {
+                                previousCard(animationSpeed: animationSpeed)
                             }
                         } else {
                             // Если нет предыдущей карточки, возвращаем текущую в центр
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            withAnimation(animationSpeed.returnAnimation) {
                                 cardOffset = .zero
                             }
                         }
                     } else if value.translation.width < -swipeThreshold || velocity < -300 {
                         // Свайп влево - следующая карточка
                         if currentCardIndex < tasks.count - 1 {
-                            performCoverFlowTransition(direction: .left) {
-                                nextCard()
+                            performCoverFlowTransition(direction: .left, animationSpeed: animationSpeed) {
+                                nextCard(animationSpeed: animationSpeed)
                             }
                         } else {
                             // Если нет следующей карточки, возвращаем текущую в центр
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            withAnimation(animationSpeed.returnAnimation) {
                                 cardOffset = .zero
                             }
                         }
                     } else {
                         // Если свайп слишком слабый, возвращаем карточку в центр
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                        withAnimation(animationSpeed.returnAnimation) {
                             cardOffset = .zero
                         }
                     }
@@ -507,31 +527,88 @@ struct CoverFlowView: View {
         .contentShape(Rectangle())
     }
     
+    // MARK: - Animation Speed Management
+    private struct AnimationSpeed {
+        let transitionAnimation: Animation
+        let returnAnimation: Animation
+        let delayDuration: Double
+    }
+    
+    private func getAdaptiveAnimationSpeed(velocity: CGFloat) -> AnimationSpeed {
+        // Категоризируем скорость свайпа
+        switch velocity {
+        case 0..<500:
+            // Медленный свайп - стандартные плавные анимации
+            return AnimationSpeed(
+                transitionAnimation: .spring(response: 0.5, dampingFraction: 0.85),
+                returnAnimation: .spring(response: 0.6, dampingFraction: 0.85),
+                delayDuration: 0.5
+            )
+        case 500..<1000:
+            // Средний свайп - немного быстрее
+            return AnimationSpeed(
+                transitionAnimation: .spring(response: 0.4, dampingFraction: 0.8),
+                returnAnimation: .spring(response: 0.4, dampingFraction: 0.8),
+                delayDuration: 0.4
+            )
+        case 1000..<2000:
+            // Быстрый свайп - быстрые анимации
+            return AnimationSpeed(
+                transitionAnimation: .spring(response: 0.3, dampingFraction: 0.75),
+                returnAnimation: .spring(response: 0.3, dampingFraction: 0.75),
+                delayDuration: 0.3
+            )
+        default:
+            // Очень быстрый свайп - максимально быстрые анимации
+            return AnimationSpeed(
+                transitionAnimation: .spring(response: 0.2, dampingFraction: 0.7),
+                returnAnimation: .spring(response: 0.2, dampingFraction: 0.7),
+                delayDuration: 0.2
+            )
+        }
+    }
+
     // MARK: - Navigation Methods
-    private func nextCard() {
+    private func nextCard(animationSpeed: AnimationSpeed = AnimationSpeed(
+        transitionAnimation: .spring(response: 0.6, dampingFraction: 0.85),
+        returnAnimation: .spring(response: 0.6, dampingFraction: 0.85),
+        delayDuration: 0.6
+    )) {
         guard currentCardIndex < tasks.count - 1 else { return }
         
-        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+        withAnimation(animationSpeed.transitionAnimation) {
             currentCardIndex += 1
-            isFlipped = false // Сбрасываем состояние переворота при переходе к следующей карточке
+            isFlipped = false
         }
     }
     
-    private func previousCard() {
+    private func previousCard(animationSpeed: AnimationSpeed = AnimationSpeed(
+        transitionAnimation: .spring(response: 0.6, dampingFraction: 0.85),
+        returnAnimation: .spring(response: 0.6, dampingFraction: 0.85),
+        delayDuration: 0.6
+    )) {
         guard currentCardIndex > 0 else { return }
         
-        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+        withAnimation(animationSpeed.transitionAnimation) {
             currentCardIndex -= 1
-            isFlipped = false // Сбрасываем состояние переворота при переходе к предыдущей карточке
+            isFlipped = false
         }
     }
-    
+
     // MARK: - Cover Flow Animation
     private enum SwipeDirection {
         case left, right
     }
     
-    private func performCoverFlowTransition(direction: SwipeDirection, completion: @escaping () -> Void) {
+    private func performCoverFlowTransition(
+        direction: SwipeDirection, 
+        animationSpeed: AnimationSpeed = AnimationSpeed(
+            transitionAnimation: .spring(response: 0.7, dampingFraction: 0.85),
+            returnAnimation: .spring(response: 0.6, dampingFraction: 0.85),
+            delayDuration: 0.7
+        ),
+        completion: @escaping () -> Void
+    ) {
         // Определяем направления выхода и входа в зависимости от направления свайпа
         let exitOffset: CGFloat
         let enterOffset: CGFloat
@@ -556,35 +633,40 @@ struct CoverFlowView: View {
             targetCardIndex = currentCardIndex - 1
         }
         
-        // Устанавливаем следующую карточку в начальную позицию
-        nextCardIndex = targetCardIndex
-        nextCardOffset = CGSize(width: enterOffset, height: 0)
-        nextCardRotation = enterRotation
-        nextCardScale = enterScale
-        
-        // Начинаем одновременную анимацию: текущая карточка уходит, новая появляется
-        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-            // Текущая карточка уходит в сторону
+        // Шаг 1: Анимируем исчезновение текущей карточки
+        withAnimation(animationSpeed.transitionAnimation) {
             cardOffset.width = exitOffset
             isTransitioning = true
-            
-            // Новая карточка движется к центру
-            nextCardOffset = .zero
-            nextCardRotation = 0
-            nextCardScale = 1.0
         }
         
-        // Завершаем переход
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-            completion()
+        // Шаг 2: После завершения исчезновения, показываем новую карточку
+        DispatchQueue.main.asyncAfter(deadline: .now() + animationSpeed.delayDuration) {
+            // Устанавливаем новую карточку в начальную позицию (за кадром)
+            nextCardIndex = targetCardIndex
+            nextCardOffset = CGSize(width: enterOffset, height: 0)
+            nextCardRotation = enterRotation
+            nextCardScale = enterScale
             
-            // Сбрасываем состояния
-            isTransitioning = false
-            cardOffset = .zero  // Сбрасываем offset для новой карточки
-            nextCardIndex = nil
-            nextCardOffset = .zero
-            nextCardRotation = 0
-            nextCardScale = 0.75
+            // Шаг 3: Анимируем появление новой карточки
+            withAnimation(animationSpeed.transitionAnimation) {
+                // Новая карточка движется к центру
+                nextCardOffset = .zero
+                nextCardRotation = 0
+                nextCardScale = 1.0
+            }
+            
+            // Шаг 4: Завершаем переход после появления новой карточки
+            DispatchQueue.main.asyncAfter(deadline: .now() + animationSpeed.delayDuration) {
+                completion()
+                
+                // Сбрасываем состояния
+                isTransitioning = false
+                cardOffset = .zero
+                nextCardIndex = nil
+                nextCardOffset = .zero
+                nextCardRotation = 0
+                nextCardScale = 0.75
+            }
         }
     }
 }
