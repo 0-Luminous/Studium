@@ -426,12 +426,23 @@ struct CoverFlowView: View {
     }
     
     private func performCoverFlowTransition(direction: SwipeDirection, completion: @escaping () -> Void) {
-        // Карточка всегда уходит влево
-        let exitOffset: CGFloat = -UIScreen.main.bounds.width
-        // Новая карточка всегда появляется справа
-        let enterOffset: CGFloat = UIScreen.main.bounds.width
+        // Определяем направления выхода и входа в зависимости от направления свайпа
+        // Карточка должна уходить в соответствующую колонку и появляться из противоположной
+        let exitOffset: CGFloat
+        let enterOffset: CGFloat
         
-        // Начинаем анимацию ухода карточки влево
+        switch direction {
+        case .left:
+            // Свайп влево: карточка уходит в ПРАВУЮ колонку, новая появляется из ЛЕВОЙ колонки
+            exitOffset = 400  // Уходит в правую колонку (положительное значение)
+            enterOffset = -400  // Появляется из левой колонки (отрицательное значение)
+        case .right:
+            // Свайп вправо: карточка уходит в ЛЕВУЮ колонку, новая появляется из ПРАВОЙ колонки  
+            exitOffset = -400  // Уходит в левую колонку (отрицательное значение)
+            enterOffset = 400  // Появляется из правой колонки (положительное значение)
+        }
+        
+        // Начинаем анимацию ухода текущей карточки в соответствующую колонку
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
             cardOffset.width = exitOffset
             isTransitioning = true
@@ -441,10 +452,10 @@ struct CoverFlowView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
             completion()
             
-            // Устанавливаем новую карточку справа
+            // Устанавливаем новую карточку в противоположной колонке
             cardOffset.width = enterOffset
             
-            // Анимируем появление новой карточки из правой стороны
+            // Анимируем появление новой карточки из колонки в центр
             withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                 cardOffset = .zero
                 isTransitioning = false
