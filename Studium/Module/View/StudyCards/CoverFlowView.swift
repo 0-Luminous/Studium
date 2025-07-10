@@ -619,28 +619,29 @@ struct CoverFlowView: View {
         switch direction {
         case .left:
             // Свайп влево: следующая карточка (новая появляется справа)
-            exitOffset = -400  // Текущая карточка уходит влево
-            enterOffset = 400  // Новая карточка появляется справа
+            exitOffset = -600  // Текущая карточка полностью уходит влево за экран
+            enterOffset = 600  // Новая карточка появляется справа за экраном
             enterRotation = -45  // Поворот как в правой колонке
             enterScale = 0.75  // Масштаб как в колонке
             targetCardIndex = currentCardIndex + 1
         case .right:
             // Свайп вправо: предыдущая карточка (новая появляется слева)
-            exitOffset = 400  // Текущая карточка уходит вправо
-            enterOffset = -400  // Новая карточка появляется слева
+            exitOffset = 600  // Текущая карточка полностью уходит вправо за экран
+            enterOffset = -600  // Новая карточка появляется слева за экраном
             enterRotation = 45  // Поворот как в левой колонке
             enterScale = 0.75  // Масштаб как в колонке
             targetCardIndex = currentCardIndex - 1
         }
         
         // Шаг 1: Анимируем исчезновение текущей карточки
+        // Карточка продолжает движение в том же направлении и полностью выходит за экран
         withAnimation(animationSpeed.transitionAnimation) {
             cardOffset.width = exitOffset
             isTransitioning = true
         }
         
-        // Шаг 2: После завершения исчезновения, показываем новую карточку
-        DispatchQueue.main.asyncAfter(deadline: .now() + animationSpeed.delayDuration) {
+        // Шаг 2: Одновременно с началом исчезновения показываем новую карточку
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             // Устанавливаем новую карточку в начальную позицию (за кадром)
             nextCardIndex = targetCardIndex
             nextCardOffset = CGSize(width: enterOffset, height: 0)
