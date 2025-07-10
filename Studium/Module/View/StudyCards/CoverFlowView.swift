@@ -14,9 +14,10 @@ struct CoverFlowView: View {
     @State private var cardOffset = CGSize.zero
     @State private var isDragging = false
     @State private var isTransitioning = false
-    @State private var isEnteringFromColumn = false
-    @State private var enteringRotation: Double = 0
-    @State private var enteringScale: CGFloat = 1.0
+    @State private var nextCardIndex: Int? = nil
+    @State private var nextCardOffset = CGSize.zero
+    @State private var nextCardRotation: Double = 0
+    @State private var nextCardScale: CGFloat = 0.75
     
     private var currentTask: ShortCardModel? {
         guard !tasks.isEmpty, currentCardIndex < tasks.count else { return nil }
@@ -79,8 +80,19 @@ struct CoverFlowView: View {
                     }
                 }
                 
-                // Центральная карточка (текущая)
-                if let currentTask = currentTask {
+                // Следующая карточка (анимируется во время перехода)
+                if let nextIndex = nextCardIndex, nextIndex < tasks.count {
+                    let nextTask = tasks[nextIndex]
+                    nextCardView(
+                        task: nextTask,
+                        width: cardWidth,
+                        height: cardHeight
+                    )
+                    .zIndex(999)
+                }
+                
+                // Центральная карточка (текущая) - скрываем во время перехода
+                if let currentTask = currentTask, !isTransitioning {
                     mainCardView(
                         task: currentTask,
                         width: cardWidth,
@@ -105,9 +117,9 @@ struct CoverFlowView: View {
         let limitScale = isAtRotationLimit ? 0.75 : 1.0
         let baseScale = 1.0 - abs(cardOffset.width) / 1000
         
-        // Применяем эффекты появления из колонки
-        let finalRotation = isEnteringFromColumn ? enteringRotation : Double(rotationAngle)
-        let finalScale = isEnteringFromColumn ? enteringScale : (baseScale * limitScale)
+        // Применяем базовые эффекты
+        let finalRotation = Double(rotationAngle)
+        let finalScale = baseScale * limitScale
         
         // Прозрачность текста при достижении предела
         let textOpacity = isAtRotationLimit ? 0.3 : 1.0
@@ -137,8 +149,8 @@ struct CoverFlowView: View {
                 
                 Spacer()
                 
-                // Подсказка о нажатии
-                if !task.description.isEmpty && !isDragging {
+                // Подсказка о нажатии (только на первой карточке)
+                if !task.description.isEmpty && !isDragging && currentCardIndex == 0 {
                     VStack(spacing: 6) {
                         Image(systemName: "hand.tap")
                             .font(.system(size: 18))
@@ -153,8 +165,8 @@ struct CoverFlowView: View {
                     .padding(.bottom, 16)
                 }
                 
-                // Подсказка о свайпах
-                if !isDragging {
+                // Подсказка о свайпах (только на первой карточке)
+                if !isDragging && currentCardIndex == 0 {
                     VStack(spacing: 6) {
                         HStack(spacing: 12) {
                             Image(systemName: "chevron.left")
@@ -242,8 +254,8 @@ struct CoverFlowView: View {
                 
                 Spacer()
                 
-                // Подсказка о нажатии обратно
-                if !isDragging {
+                // Подсказка о нажатии обратно (только на первой карточке)
+                if !isDragging && currentCardIndex == 0 {
                     VStack(spacing: 6) {
                         Image(systemName: "hand.tap")
                             .font(.system(size: 18))
@@ -258,8 +270,8 @@ struct CoverFlowView: View {
                     .padding(.bottom, 16)
                 }
                 
-                // Подсказка о свайпах
-                if !isDragging {
+                // Подсказка о свайпах (только на первой карточке)
+                if !isDragging && currentCardIndex == 0 {
                     VStack(spacing: 6) {
                         HStack(spacing: 12) {
                             Image(systemName: "chevron.left")
@@ -315,12 +327,12 @@ struct CoverFlowView: View {
             )
         }
         .offset(x: cardOffset.width, y: 0)
-        .scaleEffect(isDragging ? max(0.85, finalScale) : (isTransitioning ? (isEnteringFromColumn ? finalScale : 0.9) : 1.0))
+        .scaleEffect(isDragging ? max(0.85, finalScale) : 1.0)
         .rotation3DEffect(
             .degrees(Double(finalRotation)),
             axis: (x: 0, y: 1, z: 0)
         )
-        .opacity(isTransitioning ? 0.7 : 1.0)
+        .opacity(isTransitioning ? 0.0 : 1.0)
         .animation(.spring(response: 0.6, dampingFraction: 0.8), value: isFlipped)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isDragging)
         .animation(.spring(response: 0.5, dampingFraction: 0.8), value: isTransitioning)
@@ -377,6 +389,68 @@ struct CoverFlowView: View {
                     }
                 }
         )
+    }
+    
+    // MARK: - Next Card View (for transition animation)
+    private func nextCardView(task: ShortCardModel, width: CGFloat, height: CGFloat) -> some View {
+        ZStack {
+            // Лицевая сторона (вопрос)
+            VStack(spacing: 16) {
+                Spacer()
+                
+                VStack(spacing: 12) {
+                    Text("Вопрос")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(.white.opacity(0.6))
+                        .textCase(.uppercase)
+                    
+                    Text(task.title)
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(nil)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                
+                Spacer()
+            }
+            .padding(24)
+            .frame(width: width, height: height)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.accentColor.opacity(0.15),
+                                Color.accentColor.opacity(0.08)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .stroke(
+                        LinearGradient(
+                            colors: [
+                                Color.accentColor.opacity(0.3),
+                                Color.accentColor.opacity(0.1)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+                    .shadow(color: .black.opacity(0.3), radius: 15, x: 0, y: 8)
+            )
+        }
+        .offset(nextCardOffset)
+        .scaleEffect(nextCardScale)
+        .rotation3DEffect(
+            .degrees(nextCardRotation),
+            axis: (x: 0, y: 1, z: 0)
+        )
+        .contentShape(Rectangle())
     }
     
     // MARK: - Side Stack Card View (Cover Flow Style)
@@ -459,51 +533,61 @@ struct CoverFlowView: View {
     
     private func performCoverFlowTransition(direction: SwipeDirection, completion: @escaping () -> Void) {
         // Определяем направления выхода и входа в зависимости от направления свайпа
-        // Карточка должна уходить в соответствующую колонку и появляться из противоположной
         let exitOffset: CGFloat
         let enterOffset: CGFloat
         let enterRotation: Double
         let enterScale: CGFloat
+        let targetCardIndex: Int
         
         switch direction {
         case .left:
-            // Свайп влево: карточка уходит в ПРАВУЮ колонку, новая появляется из ЛЕВОЙ колонки
-            exitOffset = 400  // Уходит в правую колонку (положительное значение)
-            enterOffset = -400  // Появляется из левой колонки (отрицательное значение)
-            enterRotation = 45  // Поворот как в левой колонке
-            enterScale = 0.75  // Масштаб как в колонке
-        case .right:
-            // Свайп вправо: карточка уходит в ЛЕВУЮ колонку, новая появляется из ПРАВОЙ колонки  
-            exitOffset = -400  // Уходит в левую колонку (отрицательное значение)
-            enterOffset = 400  // Появляется из правой колонки (положительное значение)
+            // Свайп влево: следующая карточка (новая появляется справа)
+            exitOffset = -400  // Текущая карточка уходит влево
+            enterOffset = 400  // Новая карточка появляется справа
             enterRotation = -45  // Поворот как в правой колонке
             enterScale = 0.75  // Масштаб как в колонке
+            targetCardIndex = currentCardIndex + 1
+        case .right:
+            // Свайп вправо: предыдущая карточка (новая появляется слева)
+            exitOffset = 400  // Текущая карточка уходит вправо
+            enterOffset = -400  // Новая карточка появляется слева
+            enterRotation = 45  // Поворот как в левой колонке
+            enterScale = 0.75  // Масштаб как в колонке
+            targetCardIndex = currentCardIndex - 1
         }
         
-        // Начинаем анимацию ухода текущей карточки в соответствующую колонку
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+        // Сбрасываем offset текущей карточки перед новой анимацией
+        cardOffset = .zero
+        
+        // Устанавливаем следующую карточку в начальную позицию
+        nextCardIndex = targetCardIndex
+        nextCardOffset = CGSize(width: enterOffset, height: 0)
+        nextCardRotation = enterRotation
+        nextCardScale = enterScale
+        
+        // Начинаем одновременную анимацию: текущая карточка уходит, новая появляется
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+            // Текущая карточка уходит в сторону
             cardOffset.width = exitOffset
             isTransitioning = true
+            
+            // Новая карточка движется к центру
+            nextCardOffset = .zero
+            nextCardRotation = 0
+            nextCardScale = 1.0
         }
         
-        // Выполняем переход к новой карточке через небольшую задержку
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+        // Завершаем переход
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
             completion()
             
-            // Сбрасываем состояние перехода и устанавливаем новую карточку в противоположной колонке
+            // Сбрасываем состояния
             isTransitioning = false
-            cardOffset.width = enterOffset
-            isEnteringFromColumn = true
-            enteringRotation = enterRotation
-            enteringScale = enterScale
-            
-            // Анимируем появление новой карточки из колонки в центр
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                cardOffset = .zero
-                isEnteringFromColumn = false
-                enteringRotation = 0
-                enteringScale = 1.0
-            }
+            cardOffset = .zero  // Сбрасываем offset для новой карточки
+            nextCardIndex = nil
+            nextCardOffset = .zero
+            nextCardRotation = 0
+            nextCardScale = 0.75
         }
     }
 }
