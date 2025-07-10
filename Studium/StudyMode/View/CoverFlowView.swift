@@ -107,69 +107,130 @@ struct CoverFlowView: View {
                 
                 // Центральная карточка (текущая) - скрываем во время перехода
                 if let currentTask = currentTask, !isTransitioning {
-                    StudyCardView(
-                        task: currentTask,
-                        width: cardWidth,
-                        height: cardHeight,
-                        isFlipped: $isFlipped,
-                        cardOffset: $cardOffset,
-                        isDragging: $isDragging,
-                        currentCardIndex: currentCardIndex,
-                        isTransitioning: isTransitioning,
-                        onTap: {
-                            withAnimation(.spring(response: 0.8, dampingFraction: 0.9)) {
-                                isFlipped.toggle()
-                            }
-                        },
-                        onDragChanged: { value in
-                            withAnimation(.interpolatingSpring(stiffness: 400, damping: 40)) {
-                                isDragging = true
-                                cardOffset = value.translation
-                            }
-                        },
-                        onDragEnded: { value in
-                            isDragging = false
-                            
-                            let swipeThreshold: CGFloat = 50
-                            let velocity = value.velocity.width
-                            let absVelocity = abs(velocity)
-                            
-                            // Адаптивная анимация в зависимости от скорости
-                            let animationSpeed = getAdaptiveAnimationSpeed(velocity: absVelocity)
-                            
-                            if value.translation.width > swipeThreshold || velocity > 300 {
-                                // Свайп вправо - предыдущая карточка
-                                if currentCardIndex > 0 {
-                                    performCoverFlowTransition(direction: .right, animationSpeed: animationSpeed) {
-                                        previousCard(animationSpeed: animationSpeed)
+                    // Определяем тип карточки и отображаем соответствующий вид
+                    if currentTask.cardType == .test {
+                        StudyTestCardView(
+                            task: currentTask,
+                            width: cardWidth,
+                            height: cardHeight * 1.3,
+                            cardOffset: $cardOffset,
+                            isDragging: $isDragging,
+                            currentCardIndex: currentCardIndex,
+                            isTransitioning: isTransitioning,
+                            onDragChanged: { value in
+                                withAnimation(.interpolatingSpring(stiffness: 400, damping: 40)) {
+                                    isDragging = true
+                                    cardOffset = value.translation
+                                }
+                            },
+                            onDragEnded: { value in
+                                isDragging = false
+                                
+                                let swipeThreshold: CGFloat = 50
+                                let velocity = value.velocity.width
+                                let absVelocity = abs(velocity)
+                                
+                                // Адаптивная анимация в зависимости от скорости
+                                let animationSpeed = getAdaptiveAnimationSpeed(velocity: absVelocity)
+                                
+                                if value.translation.width > swipeThreshold || velocity > 300 {
+                                    // Свайп вправо - предыдущая карточка
+                                    if currentCardIndex > 0 {
+                                        performCoverFlowTransition(direction: .right, animationSpeed: animationSpeed) {
+                                            previousCard(animationSpeed: animationSpeed)
+                                        }
+                                    } else {
+                                        // Если нет предыдущей карточки, возвращаем текущую в центр
+                                        withAnimation(animationSpeed.returnAnimation) {
+                                            cardOffset = .zero
+                                        }
+                                    }
+                                } else if value.translation.width < -swipeThreshold || velocity < -300 {
+                                    // Свайп влево - следующая карточка
+                                    if currentCardIndex < tasks.count - 1 {
+                                        performCoverFlowTransition(direction: .left, animationSpeed: animationSpeed) {
+                                            nextCard(animationSpeed: animationSpeed)
+                                        }
+                                    } else {
+                                        // Если нет следующей карточки, возвращаем текущую в центр
+                                        withAnimation(animationSpeed.returnAnimation) {
+                                            cardOffset = .zero
+                                        }
                                     }
                                 } else {
-                                    // Если нет предыдущей карточки, возвращаем текущую в центр
+                                    // Если свайп слишком слабый, возвращаем карточку в центр
                                     withAnimation(animationSpeed.returnAnimation) {
                                         cardOffset = .zero
                                     }
                                 }
-                            } else if value.translation.width < -swipeThreshold || velocity < -300 {
-                                // Свайп влево - следующая карточка
-                                if currentCardIndex < tasks.count - 1 {
-                                    performCoverFlowTransition(direction: .left, animationSpeed: animationSpeed) {
-                                        nextCard(animationSpeed: animationSpeed)
+                            }
+                        )
+                        .zIndex(1000)
+                    } else {
+                        StudyCardView(
+                            task: currentTask,
+                            width: cardWidth,
+                            height: cardHeight,
+                            isFlipped: $isFlipped,
+                            cardOffset: $cardOffset,
+                            isDragging: $isDragging,
+                            currentCardIndex: currentCardIndex,
+                            isTransitioning: isTransitioning,
+                            onTap: {
+                                withAnimation(.spring(response: 0.8, dampingFraction: 0.9)) {
+                                    isFlipped.toggle()
+                                }
+                            },
+                            onDragChanged: { value in
+                                withAnimation(.interpolatingSpring(stiffness: 400, damping: 40)) {
+                                    isDragging = true
+                                    cardOffset = value.translation
+                                }
+                            },
+                            onDragEnded: { value in
+                                isDragging = false
+                                
+                                let swipeThreshold: CGFloat = 50
+                                let velocity = value.velocity.width
+                                let absVelocity = abs(velocity)
+                                
+                                // Адаптивная анимация в зависимости от скорости
+                                let animationSpeed = getAdaptiveAnimationSpeed(velocity: absVelocity)
+                                
+                                if value.translation.width > swipeThreshold || velocity > 300 {
+                                    // Свайп вправо - предыдущая карточка
+                                    if currentCardIndex > 0 {
+                                        performCoverFlowTransition(direction: .right, animationSpeed: animationSpeed) {
+                                            previousCard(animationSpeed: animationSpeed)
+                                        }
+                                    } else {
+                                        // Если нет предыдущей карточки, возвращаем текущую в центр
+                                        withAnimation(animationSpeed.returnAnimation) {
+                                            cardOffset = .zero
+                                        }
+                                    }
+                                } else if value.translation.width < -swipeThreshold || velocity < -300 {
+                                    // Свайп влево - следующая карточка
+                                    if currentCardIndex < tasks.count - 1 {
+                                        performCoverFlowTransition(direction: .left, animationSpeed: animationSpeed) {
+                                            nextCard(animationSpeed: animationSpeed)
+                                        }
+                                    } else {
+                                        // Если нет следующей карточки, возвращаем текущую в центр
+                                        withAnimation(animationSpeed.returnAnimation) {
+                                            cardOffset = .zero
+                                        }
                                     }
                                 } else {
-                                    // Если нет следующей карточки, возвращаем текущую в центр
+                                    // Если свайп слишком слабый, возвращаем карточку в центр
                                     withAnimation(animationSpeed.returnAnimation) {
                                         cardOffset = .zero
                                     }
                                 }
-                            } else {
-                                // Если свайп слишком слабый, возвращаем карточку в центр
-                                withAnimation(animationSpeed.returnAnimation) {
-                                    cardOffset = .zero
-                                }
                             }
-                        }
-                    )
-                    .zIndex(1000)
+                        )
+                        .zIndex(1000)
+                    }
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -182,19 +243,35 @@ struct CoverFlowView: View {
         @State var tempCardOffset = CGSize.zero
         @State var tempIsDragging = false
         
-        return StudyCardView(
-            task: task,
-            width: width,
-            height: height,
-            isFlipped: $tempIsFlipped,
-            cardOffset: $tempCardOffset,
-            isDragging: $tempIsDragging,
-            currentCardIndex: -1, // Не показываем подсказки для следующей карточки
-            isTransitioning: false,
-            onTap: { },
-            onDragChanged: { _ in },
-            onDragEnded: { _ in }
-        )
+        return Group {
+            if task.cardType == .test {
+                StudyTestCardView(
+                    task: task,
+                    width: width,
+                    height: height * 1.3,
+                    cardOffset: $tempCardOffset,
+                    isDragging: $tempIsDragging,
+                    currentCardIndex: -1, // Не показываем подсказки для следующей карточки
+                    isTransitioning: false,
+                    onDragChanged: { _ in },
+                    onDragEnded: { _ in }
+                )
+            } else {
+                StudyCardView(
+                    task: task,
+                    width: width,
+                    height: height,
+                    isFlipped: $tempIsFlipped,
+                    cardOffset: $tempCardOffset,
+                    isDragging: $tempIsDragging,
+                    currentCardIndex: -1, // Не показываем подсказки для следующей карточки
+                    isTransitioning: false,
+                    onTap: { },
+                    onDragChanged: { _ in },
+                    onDragEnded: { _ in }
+                )
+            }
+        }
         .offset(nextCardOffset)
         .scaleEffect(nextCardScale)
         .rotation3DEffect(
@@ -418,6 +495,14 @@ struct CoverFlowView: View {
             description: "Optional - это тип данных, который может содержать значение или nil.",
             isCompleted: false,
             cardType: .regular,
+            isBothSides: true,
+            moduleId: UUID()
+        ),
+        ShortCardModel(
+            title: "Какой из этих типов данных является правильным в Swift?",
+            description: "ПРАВИЛЬНЫЙ: String\nНЕПРАВИЛЬНЫЕ: string, STRING, Str\nПОЯСНЕНИЕ: В Swift типы данных начинаются с заглавной буквы, поэтому правильный тип для строки - String.",
+            isCompleted: false,
+            cardType: .test,
             isBothSides: true,
             moduleId: UUID()
         )
