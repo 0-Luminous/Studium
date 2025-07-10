@@ -14,6 +14,9 @@ struct CoverFlowView: View {
     @State private var cardOffset = CGSize.zero
     @State private var isDragging = false
     @State private var isTransitioning = false
+    @State private var isEnteringFromColumn = false
+    @State private var enteringRotation: Double = 0
+    @State private var enteringScale: CGFloat = 1.0
     
     private var currentTask: ShortCardModel? {
         guard !tasks.isEmpty, currentCardIndex < tasks.count else { return nil }
@@ -92,8 +95,22 @@ struct CoverFlowView: View {
     
     // MARK: - Main Card View
     private func mainCardView(task: ShortCardModel, width: CGFloat, height: CGFloat) -> some View {
-        let rotationAngle = -cardOffset.width / 10  // Инвертируем знак
-        let scale = 1.0 - abs(cardOffset.width) / 1000
+        let rawRotationAngle = -cardOffset.width / 10
+        let rotationAngle = min(max(rawRotationAngle, -30), 30)  // Ограничиваем угол поворота от -30 до 30 градусов
+        
+        // Определяем, достигнут ли предел поворота
+        let isAtRotationLimit = abs(rawRotationAngle) > 30
+        
+        // Дополнительное уменьшение при достижении предела
+        let limitScale = isAtRotationLimit ? 0.75 : 1.0
+        let baseScale = 1.0 - abs(cardOffset.width) / 1000
+        
+        // Применяем эффекты появления из колонки
+        let finalRotation = isEnteringFromColumn ? enteringRotation : Double(rotationAngle)
+        let finalScale = isEnteringFromColumn ? enteringScale : (baseScale * limitScale)
+        
+        // Прозрачность текста при достижении предела
+        let textOpacity = isAtRotationLimit ? 0.3 : 1.0
         
         return ZStack {
             // Лицевая сторона (вопрос)
@@ -106,6 +123,7 @@ struct CoverFlowView: View {
                         .fontWeight(.medium)
                         .foregroundColor(.white.opacity(0.6))
                         .textCase(.uppercase)
+                        .opacity(textOpacity)
                     
                     Text(task.title)
                         .font(.title2)
@@ -114,6 +132,7 @@ struct CoverFlowView: View {
                         .multilineTextAlignment(.center)
                         .lineLimit(nil)
                         .fixedSize(horizontal: false, vertical: true)
+                        .opacity(textOpacity)
                 }
                 
                 Spacer()
@@ -124,10 +143,12 @@ struct CoverFlowView: View {
                         Image(systemName: "hand.tap")
                             .font(.system(size: 18))
                             .foregroundColor(.white.opacity(0.4))
+                            .opacity(textOpacity)
                         
                         Text("Нажмите, чтобы увидеть ответ")
                             .font(.caption2)
                             .foregroundColor(.white.opacity(0.5))
+                            .opacity(textOpacity)
                     }
                     .padding(.bottom, 16)
                 }
@@ -139,14 +160,17 @@ struct CoverFlowView: View {
                             Image(systemName: "chevron.left")
                                 .font(.system(size: 12, weight: .medium))
                                 .foregroundColor(.white.opacity(0.3))
+                                .opacity(textOpacity)
                             
                             Text("Свайп для навигации")
                                 .font(.caption2)
                                 .foregroundColor(.white.opacity(0.4))
+                                .opacity(textOpacity)
                             
                             Image(systemName: "chevron.right")
                                 .font(.system(size: 12, weight: .medium))
                                 .foregroundColor(.white.opacity(0.3))
+                                .opacity(textOpacity)
                         }
                     }
                     .padding(.bottom, 8)
@@ -195,6 +219,7 @@ struct CoverFlowView: View {
                         .fontWeight(.medium)
                         .foregroundColor(.white.opacity(0.6))
                         .textCase(.uppercase)
+                        .opacity(textOpacity)
                     
                     if !task.description.isEmpty {
                         Text(task.description)
@@ -204,12 +229,14 @@ struct CoverFlowView: View {
                             .multilineTextAlignment(.center)
                             .lineLimit(nil)
                             .fixedSize(horizontal: false, vertical: true)
+                            .opacity(textOpacity)
                     } else {
                         Text("Нет ответа")
                             .font(.title3)
                             .fontWeight(.medium)
                             .foregroundColor(.gray)
                             .multilineTextAlignment(.center)
+                            .opacity(textOpacity)
                     }
                 }
                 
@@ -221,10 +248,12 @@ struct CoverFlowView: View {
                         Image(systemName: "hand.tap")
                             .font(.system(size: 18))
                             .foregroundColor(.white.opacity(0.4))
+                            .opacity(textOpacity)
                         
                         Text("Нажмите, чтобы вернуться к вопросу")
                             .font(.caption2)
                             .foregroundColor(.white.opacity(0.5))
+                            .opacity(textOpacity)
                     }
                     .padding(.bottom, 16)
                 }
@@ -236,14 +265,17 @@ struct CoverFlowView: View {
                             Image(systemName: "chevron.left")
                                 .font(.system(size: 12, weight: .medium))
                                 .foregroundColor(.white.opacity(0.3))
+                                .opacity(textOpacity)
                             
                             Text("Свайп для навигации")
                                 .font(.caption2)
                                 .foregroundColor(.white.opacity(0.4))
+                                .opacity(textOpacity)
                             
                             Image(systemName: "chevron.right")
                                 .font(.system(size: 12, weight: .medium))
                                 .foregroundColor(.white.opacity(0.3))
+                                .opacity(textOpacity)
                         }
                     }
                     .padding(.bottom, 8)
@@ -283,9 +315,9 @@ struct CoverFlowView: View {
             )
         }
         .offset(x: cardOffset.width, y: 0)
-        .scaleEffect(isDragging ? max(0.85, scale) : (isTransitioning ? 0.9 : 1.0))
+        .scaleEffect(isDragging ? max(0.85, finalScale) : (isTransitioning ? (isEnteringFromColumn ? finalScale : 0.9) : 1.0))
         .rotation3DEffect(
-            .degrees(Double(rotationAngle)),
+            .degrees(Double(finalRotation)),
             axis: (x: 0, y: 1, z: 0)
         )
         .opacity(isTransitioning ? 0.7 : 1.0)
@@ -310,36 +342,36 @@ struct CoverFlowView: View {
                 .onEnded { value in
                     isDragging = false
                     
-                    let swipeThreshold: CGFloat = 100
+                    let swipeThreshold: CGFloat = 50  // Уменьшаем порог для более чувствительного свайпа
                     let velocity = value.velocity.width
                     
-                    if value.translation.width > swipeThreshold || velocity > 500 {
+                    if value.translation.width > swipeThreshold || velocity > 300 {
                         // Свайп вправо - предыдущая карточка
                         if currentCardIndex > 0 {
                             performCoverFlowTransition(direction: .right) {
                                 previousCard()
                             }
                         } else {
-                            // Возвращаем карточку в исходное положение
-                            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                            // Если нет предыдущей карточки, возвращаем текущую в центр
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                                 cardOffset = .zero
                             }
                         }
-                    } else if value.translation.width < -swipeThreshold || velocity < -500 {
+                    } else if value.translation.width < -swipeThreshold || velocity < -300 {
                         // Свайп влево - следующая карточка
                         if currentCardIndex < tasks.count - 1 {
                             performCoverFlowTransition(direction: .left) {
                                 nextCard()
                             }
                         } else {
-                            // Возвращаем карточку в исходное положение
-                            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                            // Если нет следующей карточки, возвращаем текущую в центр
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                                 cardOffset = .zero
                             }
                         }
                     } else {
-                        // Возвращаем карточку в исходное положение
-                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                        // Если свайп слишком слабый, возвращаем карточку в центр
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                             cardOffset = .zero
                         }
                     }
@@ -430,16 +462,22 @@ struct CoverFlowView: View {
         // Карточка должна уходить в соответствующую колонку и появляться из противоположной
         let exitOffset: CGFloat
         let enterOffset: CGFloat
+        let enterRotation: Double
+        let enterScale: CGFloat
         
         switch direction {
         case .left:
             // Свайп влево: карточка уходит в ПРАВУЮ колонку, новая появляется из ЛЕВОЙ колонки
             exitOffset = 400  // Уходит в правую колонку (положительное значение)
             enterOffset = -400  // Появляется из левой колонки (отрицательное значение)
+            enterRotation = 45  // Поворот как в левой колонке
+            enterScale = 0.75  // Масштаб как в колонке
         case .right:
             // Свайп вправо: карточка уходит в ЛЕВУЮ колонку, новая появляется из ПРАВОЙ колонки  
             exitOffset = -400  // Уходит в левую колонку (отрицательное значение)
             enterOffset = 400  // Появляется из правой колонки (положительное значение)
+            enterRotation = -45  // Поворот как в правой колонке
+            enterScale = 0.75  // Масштаб как в колонке
         }
         
         // Начинаем анимацию ухода текущей карточки в соответствующую колонку
@@ -452,13 +490,19 @@ struct CoverFlowView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
             completion()
             
-            // Устанавливаем новую карточку в противоположной колонке
+            // Сбрасываем состояние перехода и устанавливаем новую карточку в противоположной колонке
+            isTransitioning = false
             cardOffset.width = enterOffset
+            isEnteringFromColumn = true
+            enteringRotation = enterRotation
+            enteringScale = enterScale
             
             // Анимируем появление новой карточки из колонки в центр
             withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                 cardOffset = .zero
-                isTransitioning = false
+                isEnteringFromColumn = false
+                enteringRotation = 0
+                enteringScale = 1.0
             }
         }
     }
