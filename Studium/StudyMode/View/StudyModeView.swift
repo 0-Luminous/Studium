@@ -1,5 +1,5 @@
 //
-//  StudyCardsView.swift
+//  StudyModeView.swift
 //  Studium
 //
 //  Created by Yan on 4/7/25.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct StudyCardsView: View {
+struct StudyModeView: View {
     let tasks: [ShortCardModel]
     @Environment(\.dismiss) private var dismiss
     @State private var currentCardIndex = 0
@@ -186,5 +186,5 @@ struct StudyCardsView: View {
         )
     ]
     
-    StudyCardsView(tasks: sampleTasks)
+    StudyModeView(tasks: sampleTasks)
 } 

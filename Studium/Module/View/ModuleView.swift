@@ -432,7 +432,7 @@ struct ModuleView: View {
             }
         }
         .fullScreenCover(isPresented: $viewModel.showingStudyCards) {
-            StudyCardsView(tasks: viewModel.tasks)
+            StudyModeView(tasks: viewModel.tasks)
         }
         .navigationBarHidden(true)
     }

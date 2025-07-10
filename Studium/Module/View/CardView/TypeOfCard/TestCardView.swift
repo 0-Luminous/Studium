@@ -13,12 +13,11 @@ struct TestCardView: View {
     @State private var isFlipped = false
     @State private var selectedAnswer: String? = nil
     @State private var showExplanation = false
-    
+
     var body: some View {
         ZStack {
             // Front Side - Тест
             VStack(spacing: 6) {
-                
                 // Вопрос с кнопкой пояснения
                 HStack(alignment: .top, spacing: 8) {
                     Text(task.title)
@@ -27,31 +26,20 @@ struct TestCardView: View {
                         .multilineTextAlignment(.leading)
                         .lineLimit(nil)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    
+
                     // Кнопка с лампочкой для показа пояснения
                     if showExplanation && hasExplanation {
-                        Button(action: {
-                            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
-                                isFlipped.toggle()
-                            }
-                        }) {
-                            Image(systemName: "lightbulb")
-                                .font(.system(size: 20))
-                                .foregroundColor(.yellow)
-                        }
-                        .background(
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(Color.black.opacity(0.5))
-                                .frame(width: 30, height: 30)
-                        )
-                        .padding(.top, 10)
-                        .padding(.trailing, 10)
-                        .transition(.opacity.combined(with: .scale))
+                        Image(systemName: "lightbulb")
+                            .font(.system(size: 20))
+                            .foregroundColor(.yellow)
+                            .padding(.top, 10)
+                            .padding(.trailing, 10)
+                            .transition(.opacity.combined(with: .scale))
                     }
                 }
                 .frame(minHeight: 30)
                 .padding(.bottom, 8)
-                
+
                 // Варианты ответов
                 if !task.description.isEmpty {
                     VStack(spacing: 10) {
@@ -71,7 +59,7 @@ struct TestCardView: View {
                                             .stroke(Color.white.opacity(0.5), lineWidth: 1)
                                             .frame(width: 12, height: 12)
                                     }
-                                    
+
                                     Text(answer.text)
                                         .font(.system(size: 12))
                                         .foregroundColor(.white)
@@ -93,7 +81,7 @@ struct TestCardView: View {
                         }
                     }
                 }
-                
+
                 Spacer()
             }
             .padding(.horizontal, 10)
@@ -106,7 +94,7 @@ struct TestCardView: View {
                             ? LinearGradient(
                                 gradient: Gradient(colors: [
                                     Color.gray.opacity(0.4),
-                                    Color.gray.opacity(0.3)
+                                    Color.gray.opacity(0.3),
                                 ]),
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -137,14 +125,14 @@ struct TestCardView: View {
                     Image(systemName: "lightbulb.fill")
                         .font(.system(size: 16))
                         .foregroundColor(.yellow)
-                    
+
                     Text("Пояснение")
                         .font(.caption)
                         .fontWeight(.medium)
                         .foregroundColor(.white.opacity(0.7))
                         .textCase(.uppercase)
                 }
-                
+
                 if let explanation = getExplanation() {
                     Text(explanation)
                         .font(.system(size: 14))
@@ -157,14 +145,14 @@ struct TestCardView: View {
                         .foregroundColor(.gray)
                         .multilineTextAlignment(.center)
                 }
-                
+
                 Spacer()
-                
+
                 VStack(spacing: 4) {
                     Image(systemName: "hand.tap")
                         .font(.system(size: 16))
                         .foregroundColor(.white.opacity(0.5))
-                    
+
                     Text("Нажмите чтобы вернуться")
                         .font(.caption2)
                         .foregroundColor(.white.opacity(0.6))
@@ -178,7 +166,7 @@ struct TestCardView: View {
                         LinearGradient(
                             gradient: Gradient(colors: [
                                 Color.charcoal.opacity(0.9),
-                                Color.grayCharcoal.opacity(0.7)
+                                Color.grayCharcoal.opacity(0.7),
                             ]),
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
@@ -211,9 +199,14 @@ struct TestCardView: View {
         .contentShape(.contextMenuPreview, RoundedRectangle(cornerRadius: 16))
         .onTapGesture {
             guard !isDeleting else { return }
-            
-            // Переворачиваем только если уже показано пояснение
-            if isFlipped {
+
+            // Если уже выбран ответ, работаем как обычная карточка
+            if selectedAnswer != nil {
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                    isFlipped.toggle()
+                }
+            } else if isFlipped {
+                // Переворачиваем обратно только если уже показано пояснение
                 withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
                     isFlipped = false
                 }
@@ -232,14 +225,14 @@ struct TestCardView: View {
                         onToggle()
                     }
                 }) {
-                    Label(task.isCompleted ? "Включить карточку" : "Выключить карточку", 
+                    Label(task.isCompleted ? "Включить карточку" : "Выключить карточку",
                           systemImage: task.isCompleted ? "checkmark.circle" : "circle")
                 }
-                
+
                 Button(action: onEdit) {
                     Label("Редактировать", systemImage: "pencil")
                 }
-                
+
                 Button(role: .destructive, action: onDelete) {
                     Label("Удалить", systemImage: "trash")
                 }
@@ -259,13 +252,13 @@ struct TestCardView: View {
             }
         )
     }
-    
+
     // MARK: - Helper Properties
-    
+
     private var hasExplanation: Bool {
         getExplanation() != nil
     }
-    
+
     private func getExplanation() -> String? {
         let lines = task.description.components(separatedBy: .newlines)
         for line in lines {
@@ -276,11 +269,11 @@ struct TestCardView: View {
         }
         return nil
     }
-    
+
     func parseTestAnswers(_ content: String) -> [TestAnswer] {
         var answers: [TestAnswer] = []
         let lines = content.components(separatedBy: .newlines)
-        
+
         for line in lines {
             if line.hasPrefix("ПРАВИЛЬНЫЙ: ") {
                 let answerText = String(line.dropFirst("ПРАВИЛЬНЫЙ: ".count))
@@ -295,13 +288,14 @@ struct TestCardView: View {
                 }
             }
         }
-        
+
         return answers
     }
 }
 
 // MARK: - Test Answer Model
+
 struct TestAnswer: Hashable {
     let text: String
     let isCorrect: Bool
-} 
+}
