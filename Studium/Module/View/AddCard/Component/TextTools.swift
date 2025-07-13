@@ -5,6 +5,7 @@ struct TextTools: View {
     @State private var isBoldActive = false
     @State private var isItalicActive = false
     @State private var isUnderlineActive = false
+    @State private var isStrikethroughActive = false
     @State private var isHeaderActive = false
     
     var body: some View {
@@ -57,6 +58,22 @@ struct TextTools: View {
                     .cornerRadius(6)
             }
             
+            // Strikethrough button
+            Button(action: {
+                toggleStrikethrough()
+            }) {
+                Image(systemName: "strikethrough")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(isStrikethroughActive ? .white : .primary)
+                    .frame(width: 32, height: 32)
+                    .background(isStrikethroughActive ? Color.accentColor : Color.clear)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                    )
+                    .cornerRadius(6)
+            }
+            
             // Header button
             Button(action: {
                 toggleHeader()
@@ -75,7 +92,7 @@ struct TextTools: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
-        .background(Color(.systemGray6))
+        // .background(Color(.systemGray6))
         .cornerRadius(10)
     }
     
@@ -105,6 +122,15 @@ struct TextTools: View {
             selectedText = "<u>\(selectedText)</u>"
         } else {
             selectedText = selectedText.replacingOccurrences(of: "<u>", with: "").replacingOccurrences(of: "</u>", with: "")
+        }
+    }
+    
+    private func toggleStrikethrough() {
+        isStrikethroughActive.toggle()
+        if isStrikethroughActive {
+            selectedText = "~~\(selectedText)~~"
+        } else {
+            selectedText = selectedText.replacingOccurrences(of: "~~", with: "")
         }
     }
     
