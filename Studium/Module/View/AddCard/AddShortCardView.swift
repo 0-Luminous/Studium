@@ -16,10 +16,18 @@ struct ShortCardView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 28) {
+                AddCardNavigationBar(
+                    onCancel: { dismiss() },
+                    onCreate: {
+                        onAdd(title, content, isBothSides)
+                        dismiss()
+                    },
+                    isCreateEnabled: isFormValid,
+                    createButtonColor: .blue
+                )
                 headerSection
                 formSection
                 Spacer()
-                actionButtons
             }
         }
         .background(Color.graphite)
@@ -201,71 +209,6 @@ struct ShortCardView: View {
         }
     }
 
-    // MARK: - Action Buttons
-
-    private var actionButtons: some View {
-        HStack(spacing: 16) {
-            cancelButton
-            createButton
-        }
-        .padding(.horizontal, 24)
-        .padding(.bottom, 20)
-    }
-
-    // MARK: - Create Button
-
-    private var createButton: some View {
-        Button(action: {
-            onAdd(title, content, isBothSides)
-            dismiss()
-        }) {
-            HStack {
-                Image(systemName: "plus.circle.fill")
-                    .font(.system(size: 18, weight: .medium))
-
-                Text("Создать карточку")
-                    .font(.headline)
-                    .fontWeight(.semibold)
-            }
-            .foregroundColor(.white)
-            .padding(.vertical, 16)
-            .padding(.horizontal, 20)
-            .background(createButtonBackground)
-            .shadow(
-                color: isFormValid ? .blue.opacity(0.4) : .clear,
-                radius: 8,
-                x: 0,
-                y: 4
-            )
-        }
-        .disabled(!isFormValid)
-        .scaleEffect(isFormValid ? 1.0 : 0.95)
-        .animation(.easeInOut(duration: 0.2), value: isFormValid)
-    }
-
-    // MARK: - Cancel Button
-
-    private var cancelButton: some View {
-        Button(action: {
-            dismiss()
-        }) {
-            Text("Отмена")
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundColor(.gray)
-                .padding(.vertical, 16)
-                .padding(.horizontal, 20)
-                .background(
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(Color.white.opacity(0.1))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 14)
-                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                        )
-                )
-        }
-    }
-
     // MARK: - Helper Views
 
     private func fieldBackground(isEmpty: Bool, isOverLimit: Bool = false) -> some View {
@@ -277,23 +220,6 @@ struct ShortCardView: View {
                         isOverLimit ? Color.red.opacity(0.8) :
                             isEmpty ? Color.gray.opacity(0.3) : Color.blue.opacity(0.8),
                         lineWidth: 1.5
-                    )
-            )
-    }
-
-    private var createButtonBackground: some View {
-        RoundedRectangle(cornerRadius: 14)
-            .fill(
-                isFormValid
-                    ? LinearGradient(
-                        gradient: Gradient(colors: [Color.blue, Color.blue.opacity(0.8)]),
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                    : LinearGradient(
-                        gradient: Gradient(colors: [Color.gray.opacity(0.3), Color.gray.opacity(0.3)]),
-                        startPoint: .leading,
-                        endPoint: .trailing
                     )
             )
     }
