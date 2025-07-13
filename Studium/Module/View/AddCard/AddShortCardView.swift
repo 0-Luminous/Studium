@@ -45,13 +45,29 @@ struct ShortCardView: View {
                 
                 VStack(spacing: 24) {
                     if focusedField == nil || focusedField == .title {
-                        titleField
-                            .transition(.opacity.combined(with: .scale))
+                        VStack(spacing: 16) {
+                            titleField
+                            
+                            // Показываем TextTools только при фокусе на title
+                            if focusedField == .title {
+                                TextTools(selectedText: $title)
+                                    .transition(.opacity.combined(with: .move(edge: .top)))
+                            }
+                        }
+                        .transition(.opacity.combined(with: .scale))
                     }
                     
                     if focusedField == nil || focusedField == .content {
-                        contentField
-                            .transition(.opacity.combined(with: .scale))
+                        VStack(spacing: 16) {
+                            contentField
+                            
+                            // Показываем TextTools только при фокусе на content
+                            if focusedField == .content {
+                                TextTools(selectedText: $content)
+                                    .transition(.opacity.combined(with: .move(edge: .top)))
+                            }
+                        }
+                        .transition(.opacity.combined(with: .scale))
                     }
                     
                     if focusedField == nil {
