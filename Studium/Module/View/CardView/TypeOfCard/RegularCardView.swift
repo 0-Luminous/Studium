@@ -162,7 +162,8 @@ struct RegularCardView: View {
 enum CardSize {
     case regular // До 85 символов включительно на любой стороне
     case wide    // Больше 85 символов на любой стороне
-    case test    // Тестовая карточка (2x2)
+    case test    // Тестовая карточка (2x2) - до 4 вариантов ответов
+    case testLarge // Тестовая карточка (2x3) - 8 вариантов ответов
 }
 
 // MARK: - Press Gesture Extension

@@ -25,14 +25,38 @@ struct ModuleView: View {
     
     // Определяем размер карточки на основе длины текста
     private func cardSize(for task: ShortCardModel) -> CardSize {
-        // Карточка-тест всегда большая (2x2)
+        // Карточка-тест: проверяем количество вариантов ответов
         if task.cardType == .test {
-            return .test
+            let answers = parseTestAnswers(task.description)
+            return answers.count > 4 ? .testLarge : .test
         }
         
         let titleLength = task.title.count
         let descriptionLength = task.description.count
         return (titleLength > 85 || descriptionLength > 85) ? .wide : .regular
+    }
+    
+    // Вспомогательная функция для парсинга ответов теста
+    private func parseTestAnswers(_ content: String) -> [TestAnswer] {
+        var answers: [TestAnswer] = []
+        let lines = content.components(separatedBy: .newlines)
+
+        for line in lines {
+            if line.hasPrefix("ПРАВИЛЬНЫЙ: ") {
+                let answerText = String(line.dropFirst("ПРАВИЛЬНЫЙ: ".count))
+                answers.append(TestAnswer(text: answerText, isCorrect: true))
+            } else if line.hasPrefix("НЕПРАВИЛЬНЫЕ: ") {
+                let wrongAnswersText = String(line.dropFirst("НЕПРАВИЛЬНЫЕ: ".count))
+                let wrongAnswers = wrongAnswersText.components(separatedBy: ", ")
+                for wrongAnswer in wrongAnswers {
+                    if !wrongAnswer.trimmingCharacters(in: .whitespaces).isEmpty {
+                        answers.append(TestAnswer(text: wrongAnswer.trimmingCharacters(in: .whitespaces), isCorrect: false))
+                    }
+                }
+            }
+        }
+
+        return answers
     }
     
     // Вычисляем количество колонок для обычных карточек
@@ -49,6 +73,7 @@ struct ModuleView: View {
         let wideCardWidth = cardWidth * 2 + cardSpacing
         let normalCardHeight: CGFloat = 120
         let testCardHeight: CGFloat = normalCardHeight * 2 + cardSpacing // Высота двух карточек + отступ
+        let testLargeCardHeight: CGFloat = normalCardHeight * 3 + cardSpacing * 2 // Высота трех карточек + отступы
         
         let arrangedCards = arrangeCardsInRows(columnsCount: columnsCount)
         
@@ -60,6 +85,7 @@ struct ModuleView: View {
                     wideCardWidth: wideCardWidth,
                     normalCardHeight: normalCardHeight,
                     testCardHeight: testCardHeight,
+                    testLargeCardHeight: testLargeCardHeight,
                     columnsCount: columnsCount
                 )
             }
@@ -73,19 +99,23 @@ struct ModuleView: View {
         wideCardWidth: CGFloat,
         normalCardHeight: CGFloat,
         testCardHeight: CGFloat,
+        testLargeCardHeight: CGFloat,
         columnsCount: Int
     ) -> some View {
-        let hasTestCard = row.contains { cardSize(for: $0) == .test }
-        let testCard = row.first { cardSize(for: $0) == .test }
-        let regularCards = row.filter { cardSize(for: $0) != .test } // Включает обычные и широкие карточки
+        let hasTestCard = row.contains { cardSize(for: $0) == .test || cardSize(for: $0) == .testLarge }
+        let testCard = row.first { cardSize(for: $0) == .test || cardSize(for: $0) == .testLarge }
+        let regularCards = row.filter { cardSize(for: $0) != .test && cardSize(for: $0) != .testLarge } // Включает обычные и широкие карточки
         
         return HStack(alignment: .top, spacing: cardSpacing) {
             // Если есть тестовая карточка, размещаем её первой
             if let testCard = testCard {
+                let testCardSize = cardSize(for: testCard)
+                let height = testCardSize == .testLarge ? testLargeCardHeight : testCardHeight
+                
                 createCardView(
                     task: testCard,
                     width: wideCardWidth,
-                    height: testCardHeight
+                    height: height
                 )
                 
                 // Размещаем обычные карточки в VStack рядом с тестовой
@@ -95,7 +125,8 @@ struct ModuleView: View {
                         cards: regularCards,
                         cardWidth: cardWidth,
                         normalCardHeight: normalCardHeight,
-                        availableColumns: availableColumns
+                        availableColumns: availableColumns,
+                        testCardHeight: height
                     )
                 }
             } else {
@@ -119,34 +150,75 @@ struct ModuleView: View {
         cards: [ShortCardModel],
         cardWidth: CGFloat,
         normalCardHeight: CGFloat,
-        availableColumns: Int
+        availableColumns: Int,
+        testCardHeight: CGFloat
     ) -> some View {
-        let testCardHeight = normalCardHeight * 2 + cardSpacing
         let wideCardWidth = cardWidth * 2 + cardSpacing
         
-        // Размещаем карточки в два уровня с учетом широких карточек
-        let levelArrangements = arrangeCardsInLevels(cards: cards, availableColumns: availableColumns)
+        // Определяем количество уровней на основе высоты тестовой карточки
+        let testLargeCardHeight = normalCardHeight * 3 + cardSpacing * 2
+        let isTestLarge = testCardHeight >= testLargeCardHeight
         
         return VStack(alignment: .leading, spacing: cardSpacing) {
-            // Верхний уровень
-            createLevelView(
-                cards: levelArrangements.topLevel,
-                cardWidth: cardWidth,
-                wideCardWidth: wideCardWidth,
-                normalCardHeight: normalCardHeight,
-                availableColumns: availableColumns
-            )
-            
-            // Нижний уровень
-            createLevelView(
-                cards: levelArrangements.bottomLevel,
-                cardWidth: cardWidth,
-                wideCardWidth: wideCardWidth,
-                normalCardHeight: normalCardHeight,
-                availableColumns: availableColumns
-            )
+            if isTestLarge {
+                // Размещаем карточки в три уровня для testLarge карточек
+                let levelArrangements = arrangeCardsInThreeLevels(cards: cards, availableColumns: availableColumns)
+                
+                // Верхний уровень
+                createLevelView(
+                    cards: levelArrangements.topLevel,
+                    cardWidth: cardWidth,
+                    wideCardWidth: wideCardWidth,
+                    normalCardHeight: normalCardHeight,
+                    availableColumns: availableColumns,
+                    testCardHeight: testCardHeight
+                )
+                
+                // Средний уровень
+                createLevelView(
+                    cards: levelArrangements.middleLevel,
+                    cardWidth: cardWidth,
+                    wideCardWidth: wideCardWidth,
+                    normalCardHeight: normalCardHeight,
+                    availableColumns: availableColumns,
+                    testCardHeight: testCardHeight
+                )
+                
+                // Нижний уровень
+                createLevelView(
+                    cards: levelArrangements.bottomLevel,
+                    cardWidth: cardWidth,
+                    wideCardWidth: wideCardWidth,
+                    normalCardHeight: normalCardHeight,
+                    availableColumns: availableColumns,
+                    testCardHeight: testCardHeight
+                )
+            } else {
+                // Размещаем карточки в два уровня для обычных test карточек
+                let levelArrangements = arrangeCardsInLevels(cards: cards, availableColumns: availableColumns)
+                
+                // Верхний уровень
+                createLevelView(
+                    cards: levelArrangements.topLevel,
+                    cardWidth: cardWidth,
+                    wideCardWidth: wideCardWidth,
+                    normalCardHeight: normalCardHeight,
+                    availableColumns: availableColumns,
+                    testCardHeight: testCardHeight
+                )
+                
+                // Нижний уровень
+                createLevelView(
+                    cards: levelArrangements.bottomLevel,
+                    cardWidth: cardWidth,
+                    wideCardWidth: wideCardWidth,
+                    normalCardHeight: normalCardHeight,
+                    availableColumns: availableColumns,
+                    testCardHeight: testCardHeight
+                )
+            }
         }
-        .frame(height: testCardHeight) // Принудительно задаем высоту равную тестовой карточке
+        .frame(height: testCardHeight)
     }
     
     // Размещаем карточки по уровням с учетом широких карточек
@@ -158,7 +230,7 @@ struct ModuleView: View {
         
         for card in cards {
             let size = cardSize(for: card)
-            let cardWidth = size == .wide ? 2 : 1
+            let cardWidth = (size == .wide || size == .test || size == .testLarge) ? 2 : 1
             
             // Пытаемся разместить в верхнем уровне
             if topLevelWidth + cardWidth <= availableColumns {
@@ -179,20 +251,58 @@ struct ModuleView: View {
         return (topLevel, bottomLevel)
     }
     
+    // Размещаем карточки в три уровня для testLarge карточек
+    private func arrangeCardsInThreeLevels(cards: [ShortCardModel], availableColumns: Int) -> (topLevel: [ShortCardModel], middleLevel: [ShortCardModel], bottomLevel: [ShortCardModel]) {
+        var topLevel: [ShortCardModel] = []
+        var middleLevel: [ShortCardModel] = []
+        var bottomLevel: [ShortCardModel] = []
+        var topLevelWidth = 0
+        var middleLevelWidth = 0
+        var bottomLevelWidth = 0
+        
+        for card in cards {
+            let size = cardSize(for: card)
+            let cardWidth = (size == .wide || size == .test || size == .testLarge) ? 2 : 1
+            
+            // Пытаемся разместить в верхнем уровне
+            if topLevelWidth + cardWidth <= availableColumns {
+                topLevel.append(card)
+                topLevelWidth += cardWidth
+            }
+            // Если не помещается в верхний, пытаемся в средний
+            else if middleLevelWidth + cardWidth <= availableColumns {
+                middleLevel.append(card)
+                middleLevelWidth += cardWidth
+            }
+            // Если не помещается в средний, пытаемся в нижний
+            else if bottomLevelWidth + cardWidth <= availableColumns {
+                bottomLevel.append(card)
+                bottomLevelWidth += cardWidth
+            }
+            // Если не помещается ни в один уровень, прерываем (карточка не будет размещена)
+            else {
+                break
+            }
+        }
+        
+        return (topLevel, middleLevel, bottomLevel)
+    }
+    
     // Создаем представление для одного уровня с поддержкой широких карточек
     private func createLevelView(
         cards: [ShortCardModel],
         cardWidth: CGFloat,
         wideCardWidth: CGFloat,
         normalCardHeight: CGFloat,
-        availableColumns: Int
+        availableColumns: Int,
+        testCardHeight: CGFloat
     ) -> some View {
         HStack(spacing: cardSpacing) {
             ForEach(cards, id: \.id) { task in
                 let size = cardSize(for: task)
                 createCardView(
                     task: task,
-                    width: size == .wide ? wideCardWidth : cardWidth,
+                    width: (size == .wide || size == .test || size == .testLarge) ? wideCardWidth : cardWidth,
                     height: normalCardHeight
                 )
             }
@@ -200,7 +310,7 @@ struct ModuleView: View {
             // Добавляем пустое пространство для выравнивания
             let usedWidth = cards.reduce(0) { total, card in
                 let size = cardSize(for: card)
-                return total + (size == .wide ? 2 : 1)
+                return total + ((size == .wide || size == .test || size == .testLarge) ? 2 : 1)
             }
             
             if usedWidth < availableColumns {
@@ -244,7 +354,7 @@ struct ModuleView: View {
         
         for task in viewModel.tasks {
             let size = cardSize(for: task)
-            let cardWidth = size == .wide ? 2 : (size == .test ? 2 : 1)
+            let cardWidth = size == .wide ? 2 : ((size == .test || size == .testLarge) ? 2 : 1)
             
             // Ищем подходящий ряд для размещения карточки
             var placed = false
@@ -252,7 +362,7 @@ struct ModuleView: View {
                 let canFit = currentWidth + cardWidth <= columnsCount
                 
                 // Особая логика для тестовых карточек
-                if size == .test {
+                if size == .test || size == .testLarge {
                     // Тестовая карточка помещается только если есть место для 2 колонок
                     if canFit && !rowHasTestCard[index] {
                         rows[index].append(task)
@@ -267,19 +377,37 @@ struct ModuleView: View {
                         // Если в ряду уже есть тестовая карточка, можем добавить больше карточек
                         // так как они будут размещены в VStack рядом с тестовой
                         if rowHasTestCard[index] {
-                            let regularCards = rows[index].filter { cardSize(for: $0) != .test }
+                            let regularCards = rows[index].filter { cardSize(for: $0) != .test && cardSize(for: $0) != .testLarge }
                             let availableColumns = columnsCount - 2 // Тестовая карточка занимает 2 колонки
                             
-                            // Проверяем, поместится ли новая карточка в двухуровневую структуру
-                            let testCards = regularCards + [task]
-                            let levelArrangements = arrangeCardsInLevels(cards: testCards, availableColumns: availableColumns)
-                            let totalArrangedCards = levelArrangements.topLevel.count + levelArrangements.bottomLevel.count
+                            // Проверяем тип тестовой карточки в ряду
+                            let testCard = rows[index].first { cardSize(for: $0) == .test || cardSize(for: $0) == .testLarge }
+                            let isTestLarge = testCard != nil && cardSize(for: testCard!) == .testLarge
                             
-                            // Если все карточки помещаются в два уровня, добавляем
-                            if totalArrangedCards == testCards.count {
-                                rows[index].append(task)
-                                placed = true
-                                break
+                            let testCards = regularCards + [task]
+                            
+                            if isTestLarge {
+                                // Проверяем, поместится ли новая карточка в трехуровневую структуру
+                                let levelArrangements = arrangeCardsInThreeLevels(cards: testCards, availableColumns: availableColumns)
+                                let totalArrangedCards = levelArrangements.topLevel.count + levelArrangements.middleLevel.count + levelArrangements.bottomLevel.count
+                                
+                                // Если все карточки помещаются в три уровня, добавляем
+                                if totalArrangedCards == testCards.count {
+                                    rows[index].append(task)
+                                    placed = true
+                                    break
+                                }
+                            } else {
+                                // Проверяем, поместится ли новая карточка в двухуровневую структуру
+                                let levelArrangements = arrangeCardsInLevels(cards: testCards, availableColumns: availableColumns)
+                                let totalArrangedCards = levelArrangements.topLevel.count + levelArrangements.bottomLevel.count
+                                
+                                // Если все карточки помещаются в два уровня, добавляем
+                                if totalArrangedCards == testCards.count {
+                                    rows[index].append(task)
+                                    placed = true
+                                    break
+                                }
                             }
                         } else {
                             // Обычное размещение без тестовых карточек
@@ -296,7 +424,7 @@ struct ModuleView: View {
             if !placed {
                 rows.append([task])
                 rowWidths.append(cardWidth)
-                rowHasTestCard.append(size == .test)
+                rowHasTestCard.append(size == .test || size == .testLarge)
             }
         }
         

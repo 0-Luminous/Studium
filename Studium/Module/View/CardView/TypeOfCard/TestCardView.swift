@@ -42,42 +42,23 @@ struct TestCardView: View {
 
                 // Варианты ответов
                 if !task.description.isEmpty {
-                    VStack(spacing: 10) {
-                        ForEach(parseTestAnswers(task.description), id: \.self) { answer in
-                            Button(action: {
-                                selectedAnswer = answer.text
-                                showExplanation = true
-                            }) {
-                                HStack(spacing: 10) {
-                                    // Показываем результат только если ответ выбран
-                                    if selectedAnswer == answer.text {
-                                        Image(systemName: answer.isCorrect ? "checkmark.circle.fill" : "xmark.circle.fill")
-                                            .font(.system(size: 12))
-                                            .foregroundColor(answer.isCorrect ? .green : .black)
-                                    } else {
-                                        Circle()
-                                            .stroke(Color.white.opacity(0.5), lineWidth: 1)
-                                            .frame(width: 12, height: 12)
-                                    }
-
-                                    Text(answer.text)
-                                        .font(.system(size: 12))
-                                        .foregroundColor(.white)
-                                        .multilineTextAlignment(.leading)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                }
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 8)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 6)
-                                        .fill(
-                                            selectedAnswer == answer.text
-                                                ? (answer.isCorrect ? Color.green.opacity(0.2) : Color.coral)
-                                                : Color.black.opacity(0.5)
-                                        )
-                                )
+                    let answers = parseTestAnswers(task.description)
+                    
+                    // Определяем количество вариантов ответов для выбора layout
+                    if answers.count <= 4 {
+                        // Обычный VStack для 4 и менее вариантов
+                        VStack(spacing: 8) {
+                            ForEach(answers, id: \.self) { answer in
+                                answerButton(for: answer)
                             }
-                            .disabled(selectedAnswer != nil)
+                        }
+                    } else {
+                        // Сетка 2x3 для 8 вариантов
+                        let columns = Array(repeating: GridItem(.flexible(), spacing: 6), count: 2)
+                        LazyVGrid(columns: columns, spacing: 6) {
+                            ForEach(answers, id: \.self) { answer in
+                                answerButton(for: answer)
+                            }
                         }
                     }
                 }
@@ -257,6 +238,46 @@ struct TestCardView: View {
 
     private var hasExplanation: Bool {
         getExplanation() != nil
+    }
+    
+    // MARK: - Answer Button Helper
+    
+    private func answerButton(for answer: TestAnswer) -> some View {
+        Button(action: {
+            selectedAnswer = answer.text
+            showExplanation = true
+        }) {
+            HStack(spacing: 8) {
+                // Показываем результат только если ответ выбран
+                if selectedAnswer == answer.text {
+                    Image(systemName: answer.isCorrect ? "checkmark.circle.fill" : "xmark.circle.fill")
+                        .font(.system(size: 10))
+                        .foregroundColor(answer.isCorrect ? .green : .black)
+                } else {
+                    Circle()
+                        .stroke(Color.white.opacity(0.5), lineWidth: 1)
+                        .frame(width: 10, height: 10)
+                }
+
+                Text(answer.text)
+                    .font(.system(size: 10))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .lineLimit(2)
+            }
+            .padding(.horizontal, 6)
+            .padding(.vertical, 6)
+            .background(
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(
+                        selectedAnswer == answer.text
+                            ? (answer.isCorrect ? Color.green.opacity(0.2) : Color.coral)
+                            : Color.black.opacity(0.5)
+                    )
+            )
+        }
+        .disabled(selectedAnswer != nil)
     }
 
     private func getExplanation() -> String? {
