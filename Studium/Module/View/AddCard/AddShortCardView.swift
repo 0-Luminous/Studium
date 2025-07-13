@@ -9,28 +9,73 @@ struct ShortCardView: View {
     @State private var title = ""
     @State private var content = ""
     @State private var isBothSides = true
+    @FocusState private var focusedField: FocusedField?
 
     // Увеличиваем лимит для возможности создания широких карточек
     private let maxCharacterLimit = 160
+    
+    enum FocusedField {
+        case title
+        case content
+    }
 
     var body: some View {
         ScrollView {
             VStack(spacing: 28) {
-                AddCardNavigationBar(
-                    onCancel: { dismiss() },
-                    onCreate: {
-                        onAdd(title, content, isBothSides)
-                        dismiss()
-                    },
-                    isCreateEnabled: isFormValid,
-                    createButtonColor: .blue
-                )
-                headerSection
-                formSection
-                Spacer()
+                if focusedField == nil {
+                    AddCardNavigationBar(
+                        onCancel: { dismiss() },
+                        onCreate: {
+                            onAdd(title, content, isBothSides)
+                            dismiss()
+                        },
+                        isCreateEnabled: isFormValid,
+                        createButtonColor: .blue
+                    )
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                    
+                    headerSection
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+                
+                // Добавляем гибкий спейсер для центрирования при фокусе
+                if focusedField != nil {
+                    Spacer()
+                }
+                
+                VStack(spacing: 24) {
+                    if focusedField == nil || focusedField == .title {
+                        titleField
+                            .transition(.opacity.combined(with: .scale))
+                    }
+                    
+                    if focusedField == nil || focusedField == .content {
+                        contentField
+                            .transition(.opacity.combined(with: .scale))
+                    }
+                    
+                    if focusedField == nil {
+                        bothSidesToggle
+                            .transition(.opacity.combined(with: .move(edge: .bottom)))
+                    }
+                }
+                .padding(.horizontal, 24)
+                .animation(.easeInOut(duration: 0.3), value: focusedField)
+                
+                // Добавляем второй спейсер для центрирования
+                if focusedField != nil {
+                    Spacer()
+                } else {
+                    Spacer(minLength: 200)
+                }
             }
+            .padding(.bottom, 50)
         }
+        .scrollDismissesKeyboard(.interactively)
         .background(Color.graphite)
+        .onTapGesture {
+            focusedField = nil
+        }
     }
 
     // MARK: - Header Section
@@ -50,15 +95,7 @@ struct ShortCardView: View {
     }
 
     // MARK: - Form Section
-
-    private var formSection: some View {
-        VStack(spacing: 24) {
-            titleField
-            contentField
-            bothSidesToggle
-        }
-        .padding(.horizontal, 24)
-    }
+    // Заменено на inline логику в body для условного отображения
 
     // MARK: - Title Field
 
@@ -88,6 +125,7 @@ struct ShortCardView: View {
                 .padding(.vertical, 14)
                 .background(fieldBackground(isEmpty: title.isEmpty, isOverLimit: title.count > maxCharacterLimit))
                 .foregroundColor(.white)
+                .focused($focusedField, equals: .title)
                 .onChange(of: title) { newValue in
                     if newValue.count > maxCharacterLimit {
                         title = String(newValue.prefix(maxCharacterLimit))
@@ -124,6 +162,7 @@ struct ShortCardView: View {
                 .padding(.vertical, 14)
                 .background(fieldBackground(isEmpty: content.isEmpty, isOverLimit: content.count > maxCharacterLimit))
                 .foregroundColor(.white)
+                .focused($focusedField, equals: .content)
                 .onChange(of: content) { newValue in
                     if newValue.count > maxCharacterLimit {
                         content = String(newValue.prefix(maxCharacterLimit))
