@@ -11,8 +11,13 @@ struct AddTestCardView: View {
     @State private var wrongAnswer1 = ""
     @State private var wrongAnswer2 = ""
     @State private var wrongAnswer3 = ""
+    @State private var wrongAnswer4 = ""
+    @State private var wrongAnswer5 = ""
+    @State private var wrongAnswer6 = ""
+    @State private var wrongAnswer7 = ""
     @State private var showExplanation = false
     @State private var explanation = ""
+    @State private var showMoreAnswers = false
 
     private let maxQuestionLimit = 150
     private let maxAnswerLimit = 100
@@ -28,7 +33,7 @@ struct AddTestCardView: View {
                     actionButtons
                 }
             }
-            .background(backgroundGradient)
+            .background(Color.graphite)
             .navigationBarHidden(true)
         }
         .navigationViewStyle(StackNavigationViewStyle())
@@ -162,6 +167,15 @@ struct AddTestCardView: View {
                 wrongAnswerField(text: $wrongAnswer1, placeholder: "Неправильный вариант 1", isRequired: true)
                 wrongAnswerField(text: $wrongAnswer2, placeholder: "Неправильный вариант 2 (опционально)", isRequired: false)
                 wrongAnswerField(text: $wrongAnswer3, placeholder: "Неправильный вариант 3 (опционально)", isRequired: false)
+                
+                if showMoreAnswers {
+                    wrongAnswerField(text: $wrongAnswer4, placeholder: "Неправильный вариант 4 (опционально)", isRequired: false)
+                    wrongAnswerField(text: $wrongAnswer5, placeholder: "Неправильный вариант 5 (опционально)", isRequired: false)
+                    wrongAnswerField(text: $wrongAnswer6, placeholder: "Неправильный вариант 6 (опционально)", isRequired: false)
+                    wrongAnswerField(text: $wrongAnswer7, placeholder: "Неправильный вариант 7 (опционально)", isRequired: false)
+                }
+                
+                moreAnswersButton
             }
         }
     }
@@ -189,6 +203,34 @@ struct AddTestCardView: View {
         }
     }
 
+    // MARK: - More Answers Button
+
+    private var moreAnswersButton: some View {
+        Button(action: {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                showMoreAnswers.toggle()
+            }
+        }) {
+            HStack {
+                Image(systemName: showMoreAnswers ? "minus.circle" : "plus.circle")
+                    .foregroundColor(.blue)
+                    .font(.system(size: 16, weight: .medium))
+
+                Text(showMoreAnswers ? "Скрыть дополнительные варианты" : "Добавить еще 4 варианта")
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(.blue)
+
+                Spacer()
+
+                Image(systemName: showMoreAnswers ? "chevron.up" : "chevron.down")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.gray)
+            }
+            .padding(.vertical, 8)
+        }
+    }
+
     // MARK: - Explanation Section
 
     private var explanationSection: some View {
@@ -200,8 +242,8 @@ struct AddTestCardView: View {
                     }
                 }) {
                     HStack {
-                        Image(systemName: "info.circle")
-                            .foregroundColor(.blue)
+                        Image(systemName: "lightbulb")
+                            .foregroundColor(.amber)
                             .font(.system(size: 16, weight: .medium))
 
                         Text("Пояснение к ответу")
@@ -236,7 +278,7 @@ struct AddTestCardView: View {
                         .font(.body)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 14)
-                        .background(fieldBackground(isEmpty: false, isOverLimit: explanation.count > maxExplanationLimit))
+                        .background(explanationFieldBackground(isOverLimit: explanation.count > maxExplanationLimit))
                         .foregroundColor(.white)
                         .onChange(of: explanation) { newValue in
                             if newValue.count > maxExplanationLimit {
@@ -332,6 +374,18 @@ struct AddTestCardView: View {
             )
     }
 
+    private func explanationFieldBackground(isOverLimit: Bool = false) -> some View {
+        RoundedRectangle(cornerRadius: 12)
+            .fill(Color.white.opacity(0.1))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(
+                        isOverLimit ? Color.red.opacity(0.8) : Color.amber.opacity(0.8),
+                        lineWidth: 1.5
+                    )
+            )
+    }
+
     private var createButtonBackground: some View {
         RoundedRectangle(cornerRadius: 14)
             .fill(
@@ -372,6 +426,10 @@ struct AddTestCardView: View {
         wrongAnswer1.count <= maxAnswerLimit &&
         wrongAnswer2.count <= maxAnswerLimit &&
         wrongAnswer3.count <= maxAnswerLimit &&
+        wrongAnswer4.count <= maxAnswerLimit &&
+        wrongAnswer5.count <= maxAnswerLimit &&
+        wrongAnswer6.count <= maxAnswerLimit &&
+        wrongAnswer7.count <= maxAnswerLimit &&
         explanation.count <= maxExplanationLimit
     }
 
@@ -386,6 +444,18 @@ struct AddTestCardView: View {
         }
         if !wrongAnswer3.isEmpty {
             content += ", \(wrongAnswer3)"
+        }
+        if !wrongAnswer4.isEmpty {
+            content += ", \(wrongAnswer4)"
+        }
+        if !wrongAnswer5.isEmpty {
+            content += ", \(wrongAnswer5)"
+        }
+        if !wrongAnswer6.isEmpty {
+            content += ", \(wrongAnswer6)"
+        }
+        if !wrongAnswer7.isEmpty {
+            content += ", \(wrongAnswer7)"
         }
         
         if !explanation.isEmpty {

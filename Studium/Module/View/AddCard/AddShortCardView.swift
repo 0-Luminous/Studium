@@ -14,19 +14,15 @@ struct ShortCardView: View {
     private let maxCharacterLimit = 160
 
     var body: some View {
-        NavigationView {
-            ScrollView {
-                VStack(spacing: 28) {
-                    headerSection
-                    formSection
-                    Spacer()
-                    actionButtons
-                }
+        ScrollView {
+            VStack(spacing: 28) {
+                headerSection
+                formSection
+                Spacer()
+                actionButtons
             }
-            .background(backgroundGradient)
-            .navigationBarHidden(true)
         }
-        .navigationViewStyle(StackNavigationViewStyle())
+        .background(Color.graphite)
     }
 
     // MARK: - Header Section
@@ -300,17 +296,6 @@ struct ShortCardView: View {
                         endPoint: .trailing
                     )
             )
-    }
-
-    private var backgroundGradient: some View {
-        LinearGradient(
-            gradient: Gradient(colors: [
-                Color(red: 0.098, green: 0.098, blue: 0.098),
-                Color(red: 0.078, green: 0.078, blue: 0.078),
-            ]),
-            startPoint: .top,
-            endPoint: .bottom
-        )
     }
 
     // MARK: - Computed Properties

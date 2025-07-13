@@ -396,7 +396,7 @@ struct ModuleView: View {
                     }
                 }
             }
-            .background(Color(red: 0.098, green: 0.098, blue: 0.098))
+            .background(Color.graphite)
             
             // Нижняя панель с кнопками
             VStack {
@@ -408,17 +408,49 @@ struct ModuleView: View {
                         viewModel.startStudyingCards()
                     },
                     onAddCard: {
-                        viewModel.showAddCardType()
-                    }
+                        viewModel.toggleAddCardMenu()
+                    },
+                    showingAddMenu: viewModel.showingAddCardMenu
                 )
             }
-        }
-        .sheet(isPresented: $viewModel.showingAddCardType) {
-            AddCardTypeView { cardType, title, content, isBothSides in
-                viewModel.addCard(type: cardType, title: title, content: content, isBothSides: isBothSides)
+            
+            // Меню добавления карточек
+            if viewModel.showingAddCardMenu {
+                AddCardMenuView(
+                    onAddShortCard: {
+                        viewModel.showAddShortCard()
+                    },
+                    onAddRegularCard: {
+                        viewModel.showAddRegularCard()
+                    },
+                    onAddTestCard: {
+                        viewModel.showAddTestCard()
+                    }
+                )
+                .animation(.spring(response: 0.4, dampingFraction: 0.7), value: viewModel.showingAddCardMenu)
             }
         }
-        .sheet(isPresented: $viewModel.showingEditCardType) {
+        .onTapGesture {
+            if viewModel.showingAddCardMenu {
+                viewModel.hideAddCardMenu()
+            }
+        }
+        .fullScreenCover(isPresented: $viewModel.showingAddShortCard) {
+            ShortCardView(cardType: .short) { title, content, isBothSides in
+                viewModel.addCard(type: .short, title: title, content: content, isBothSides: isBothSides)
+            }
+        }
+        .fullScreenCover(isPresented: $viewModel.showingAddRegularCard) {
+            ShortCardView(cardType: .regular) { title, content, isBothSides in
+                viewModel.addCard(type: .regular, title: title, content: content, isBothSides: isBothSides)
+            }
+        }
+        .fullScreenCover(isPresented: $viewModel.showingAddTestCard) {
+            AddTestCardView { title, content, isBothSides in
+                viewModel.addCard(type: .test, title: title, content: content, isBothSides: isBothSides)
+            }
+        }
+        .fullScreenCover(isPresented: $viewModel.showingEditCardType) {
             if let editingCard = viewModel.editingCard {
                 if editingCard.cardType == .test {
                     EditTestCardView(card: editingCard) { title, content, isBothSides in

@@ -173,7 +173,7 @@ struct AddFolderView: View {
                 .padding(.bottom, 34)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color(red: 0.098, green: 0.098, blue: 0.098))
+            .background(Color.graphite)
             .navigationBarHidden(true)
             .animation(.easeInOut(duration: 0.2), value: isTextFieldFocused)
         }

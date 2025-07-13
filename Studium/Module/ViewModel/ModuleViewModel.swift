@@ -4,7 +4,10 @@ import Foundation
 class ModuleViewModel: ObservableObject {
     // MARK: - Published Properties
     @Published var tasks: [ShortCardModel] = [] // Задачи модуля
-    @Published var showingAddCardType = false // Убираем showingAddOptions
+    @Published var showingAddCardMenu = false // Показать меню выбора карточки
+    @Published var showingAddShortCard = false // Показать создание короткой карточки
+    @Published var showingAddRegularCard = false // Показать создание обычной карточки
+    @Published var showingAddTestCard = false // Показать создание тестовой карточки
     @Published var showingStudyCards = false // Для отображения режима изучения
     @Published var deletingTaskIds: Set<UUID> = [] // Карточки в процессе удаления
     @Published var showingEditCardType = false // Для редактирования карточки
@@ -121,8 +124,37 @@ class ModuleViewModel: ObservableObject {
     }
     
     // MARK: - UI State Management
-    func showAddCardType() {
-        showingAddCardType = true
+    func showAddCardMenu() {
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+            showingAddCardMenu = true
+        }
+    }
+    
+    func hideAddCardMenu() {
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+            showingAddCardMenu = false
+        }
+    }
+    
+    func toggleAddCardMenu() {
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+            showingAddCardMenu.toggle()
+        }
+    }
+    
+    func showAddShortCard() {
+        hideAddCardMenu()
+        showingAddShortCard = true
+    }
+    
+    func showAddRegularCard() {
+        hideAddCardMenu()
+        showingAddRegularCard = true
+    }
+    
+    func showAddTestCard() {
+        hideAddCardMenu()
+        showingAddTestCard = true
     }
     
     func showEditCard(_ card: ShortCardModel) {

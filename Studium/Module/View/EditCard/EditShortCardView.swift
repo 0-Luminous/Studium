@@ -23,9 +23,9 @@ struct EditShortCardView: View {
                     actionButtons
                 }
             }
-            .background(backgroundGradient)
             .navigationBarHidden(true)
         }
+        .background(Color.graphite)
         .navigationViewStyle(StackNavigationViewStyle())
         .onAppear {
             title = card.title
@@ -33,6 +33,7 @@ struct EditShortCardView: View {
             isBothSides = card.isBothSides
         }
     }
+
 
     // MARK: - Header Section
 
@@ -305,17 +306,6 @@ struct EditShortCardView: View {
                         endPoint: .trailing
                     )
             )
-    }
-
-    private var backgroundGradient: some View {
-        LinearGradient(
-            gradient: Gradient(colors: [
-                Color(red: 0.098, green: 0.098, blue: 0.098),
-                Color(red: 0.078, green: 0.078, blue: 0.078),
-            ]),
-            startPoint: .top,
-            endPoint: .bottom
-        )
     }
 
     // MARK: - Computed Properties

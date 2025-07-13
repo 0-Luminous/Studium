@@ -4,6 +4,7 @@ struct DockBar: View {
     let hasCards: Bool
     let onStudyCards: () -> Void
     let onAddCard: () -> Void
+    let showingAddMenu: Bool
 
     var body: some View {
         ZStack {
@@ -42,12 +43,13 @@ struct DockBar: View {
                 Spacer()
                 
                 Button(action: onAddCard) {
-                    Image(systemName: "plus")
+                    Image(systemName: showingAddMenu ? "xmark" : "plus")
                         .font(.title2)
                         .foregroundColor(.white)
                         .frame(width: 56, height: 56)
-                        .background(Color.gray.opacity(0.8))
+                        .background(showingAddMenu ? Color.red : Color.accentColor)
                         .clipShape(Circle())
+                        .contentTransition(.symbolEffect(.replace))
                 }
                 .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
             }
