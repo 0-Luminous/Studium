@@ -23,8 +23,9 @@ struct AddCardMenuView: View {
                         HStack {
                             Image(systemName: "text.alignleft")
                                 .font(.title3)
-                                .foregroundColor(.white)
+                                .foregroundColor(.kiwi)
                                 .frame(width: 24)
+                                .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
                             Text("Короткая карточка")
                                 .font(.system(size: 16, weight: .medium))
                                 .foregroundColor(.white)
@@ -33,13 +34,17 @@ struct AddCardMenuView: View {
                         .padding(.horizontal, 16)
                         .padding(.vertical, 12)
                         .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(LinearGradient(
-                                    gradient: Gradient(colors: [Color.green, Color.kiwi]),
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ))
-                                .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(.ultraThinMaterial)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(LinearGradient(
+                                            gradient: Gradient(colors: [Color.white.opacity(0.3), Color.white.opacity(0.1)]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ), lineWidth: 1)
+                                )
+                                .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
                         )
                     }
 
@@ -48,8 +53,9 @@ struct AddCardMenuView: View {
                         HStack {
                             Image(systemName: "doc.text")
                                 .font(.title3)
-                                .foregroundColor(.white)
+                                .foregroundColor(.blue)
                                 .frame(width: 24)
+                                .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
                             Text("Карточка")
                                 .font(.system(size: 16, weight: .medium))
                                 .foregroundColor(.white)
@@ -58,13 +64,17 @@ struct AddCardMenuView: View {
                         .padding(.horizontal, 16)
                         .padding(.vertical, 12)
                         .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(LinearGradient(
-                                    gradient: Gradient(colors: [Color.blue, Color.oceanBlue]),
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ))
-                                .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(.ultraThinMaterial)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(LinearGradient(
+                                            gradient: Gradient(colors: [Color.white.opacity(0.3), Color.white.opacity(0.1)]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ), lineWidth: 1)
+                                )
+                                .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
                         )
                     }
 
@@ -73,8 +83,9 @@ struct AddCardMenuView: View {
                         HStack {
                             Image(systemName: "checklist")
                                 .font(.title3)
-                                .foregroundColor(.white)
+                                .foregroundColor(.watermelonRed)
                                 .frame(width: 24)
+                                .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
                             Text("Карточка-тест")
                                 .font(.system(size: 16, weight: .medium))
                                 .foregroundColor(.white)
@@ -83,13 +94,17 @@ struct AddCardMenuView: View {
                         .padding(.horizontal, 16)
                         .padding(.vertical, 12)
                         .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(LinearGradient(
-                                    gradient: Gradient(colors: [Color.watermelonRed, Color.red]),
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ))
-                                .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(.ultraThinMaterial)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(LinearGradient(
+                                            gradient: Gradient(colors: [Color.white.opacity(0.3), Color.white.opacity(0.1)]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ), lineWidth: 1)
+                                )
+                                .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
                         )
                     }
                 }

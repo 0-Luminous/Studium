@@ -10,7 +10,7 @@ struct ShortCardView: View {
     @State private var content = ""
     @State private var isBothSides = true
     @FocusState private var focusedField: FocusedField?
-
+    
     // Увеличиваем лимит для возможности создания широких карточек
     private let maxCharacterLimit = 160
     
@@ -147,6 +147,9 @@ struct ShortCardView: View {
                         title = String(newValue.prefix(maxCharacterLimit))
                     }
                 }
+            
+            // Кнопки под TextField
+            CardFieldButtons(text: $title)
         }
     }
 
@@ -184,6 +187,9 @@ struct ShortCardView: View {
                         content = String(newValue.prefix(maxCharacterLimit))
                     }
                 }
+            
+            // Кнопки под TextField
+            CardFieldButtons(text: $content)
         }
     }
 
