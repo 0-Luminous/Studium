@@ -10,7 +10,7 @@ import SwiftUI
 struct AddMenuView: View {
     let onAddModule: () -> Void
     let onAddFolder: () -> Void
-    
+
     var body: some View {
         VStack {
             Spacer()
@@ -18,56 +18,22 @@ struct AddMenuView: View {
                 Spacer()
                 VStack(spacing: 12) {
                     // Кнопка модуля
-                    Button(action: onAddModule) {
-                        HStack {
-                            Image(systemName: "tray.fill")
-                                .font(.title3)
-                                .foregroundColor(.white)
-                                .frame(width: 24)
-                            Text("Модуль")
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundColor(.white)
-                            Spacer()
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(LinearGradient(
-                                    gradient: Gradient(colors: [Color.blue, Color.blue.opacity(0.8)]),
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ))
-                                .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
-                        )
-                    }
+                    MenuButtonView(
+                        icon: "tray.fill",
+                        title: "Модуль",
+                        customIconColor: .neonPink,
+                        action: onAddModule
+                    )
 
                     // Кнопка папки
-                    Button(action: onAddFolder) {
-                        HStack {
-                            Image(systemName: "plus.rectangle.on.folder.fill")
-                                .font(.title3)
-                                .foregroundColor(.white)
-                                .frame(width: 24)
-                            Text("Папка")
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundColor(.white)
-                            Spacer()
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(LinearGradient(
-                                    gradient: Gradient(colors: [Color.orange, Color.orange.opacity(0.8)]),
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ))
-                                .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
-                        )
-                    }
+                    MenuButtonView(
+                        icon: "plus.rectangle.on.folder.fill",
+                        title: "Папка",
+                        customIconColor: .amber,
+                        action: onAddFolder
+                    )
                 }
-                .frame(width: 140)
+                .frame(width: 220) // Увеличил ширину для MenuButtonView
                 .padding(.trailing, 20)
                 .padding(.bottom, 90)
             }

@@ -2,7 +2,6 @@ import SwiftUI
 
 // MARK: - Enhanced Card Size
 enum EnhancedCardSize {
-    case compact
     case regular
     case wide
     case extraWide
@@ -11,7 +10,6 @@ enum EnhancedCardSize {
     
     var columnSpan: Int {
         switch self {
-        case .compact: return 1
         case .regular: return 1
         case .wide: return 2
         case .extraWide: return 3
@@ -27,7 +25,6 @@ enum EnhancedCardSize {
         case .extraWide: return 80
         case .wide: return 70
         case .regular: return 60
-        case .compact: return 50
         }
     }
     
@@ -37,7 +34,6 @@ enum EnhancedCardSize {
     
     func width(for gridConfig: GridConfiguration) -> CGFloat {
         switch self {
-        case .compact: return gridConfig.cardWidth * 0.8
         case .regular: return gridConfig.cardWidth
         case .wide: return gridConfig.wideCardWidth
         case .extraWide: return gridConfig.extraWideCardWidth
@@ -48,7 +44,6 @@ enum EnhancedCardSize {
     
     func height(for gridConfig: GridConfiguration) -> CGFloat {
         switch self {
-        case .compact: return gridConfig.compactCardHeight
         case .regular: return gridConfig.regularCardHeight
         case .wide: return gridConfig.wideCardHeight
         case .extraWide: return gridConfig.wideCardHeight
@@ -64,7 +59,6 @@ struct GridConfiguration {
     let cardWidth: CGFloat
     let wideCardWidth: CGFloat
     let extraWideCardWidth: CGFloat
-    let compactCardHeight: CGFloat
     let regularCardHeight: CGFloat
     let wideCardHeight: CGFloat
     let testCardHeight: CGFloat
@@ -98,7 +92,7 @@ struct EnhancedCardGrid: View {
     private let horizontalPadding: CGFloat = 20
     private let minCardWidth: CGFloat = 140
     private let maxCardWidth: CGFloat = 200
-    private let baseCardHeight: CGFloat = 110
+    private let baseCardHeight: CGFloat = 130
     
     var body: some View {
         GeometryReader { geometry in
@@ -129,7 +123,7 @@ struct EnhancedCardGrid: View {
         } else if totalLength > 120 || titleLength > 60 || descriptionLength > 80 {
             return .wide
         } else if totalLength < 30 {
-            return .compact
+            return .regular
         } else {
             return .regular
         }
@@ -227,9 +221,8 @@ struct EnhancedCardGrid: View {
             cardWidth: clampedCardWidth,
             wideCardWidth: clampedCardWidth * 2 + adaptiveCardSpacing,
             extraWideCardWidth: clampedCardWidth * 3 + adaptiveCardSpacing * 2,
-            compactCardHeight: adaptiveBaseHeight * 0.8,
             regularCardHeight: adaptiveBaseHeight,
-            wideCardHeight: adaptiveBaseHeight * 1.2,
+            wideCardHeight: adaptiveBaseHeight, // Такая же высота как у regular
             testCardHeight: adaptiveBaseHeight * 2 + adaptiveCardSpacing,
             testLargeCardHeight: adaptiveBaseHeight * 3 + adaptiveCardSpacing * 2
         )
@@ -445,7 +438,6 @@ struct EnhancedCardGrid: View {
         gridConfig: GridConfiguration
     ) -> some View {
         let cardSize = smartCardSize(for: task)
-        let isCompact = cardSize == .compact
         let isWide = cardSize == .wide || cardSize == .extraWide
         let isTest = cardSize.isTest
         
@@ -463,7 +455,6 @@ struct EnhancedCardGrid: View {
             isDeleting: viewModel.deletingTaskIds.contains(task.id)
         )
         .frame(width: width, height: height)
-        .scaleEffect(isCompact ? 0.95 : 1.0)
         .overlay(
             // Визуальные индикаторы для разных типов карточек
             Group {
